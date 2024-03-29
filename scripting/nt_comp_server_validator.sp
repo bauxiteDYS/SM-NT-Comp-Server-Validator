@@ -4,7 +4,7 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates the server plugins and settings",
 	author = "bauxite",
-	version = "0.1.3",
+	version = "0.1.5",
 	url = "",
 };
 
@@ -70,11 +70,19 @@ void ValidateServer(int client)
 	
 	
 	ReplyToCommand(client, "Matched plugins %d", pluginMatch);
-	ReplyToCommand(client, "total plugins %d", totalPlugins);
+	ReplyToCommand(client, "Total plugins %d", totalPlugins);
 	
 	if(pluginMatch == totalPlugins)
 	{
-		ReplyToCommand(client, "server validated");
+		ReplyToCommand(client, "Server Validated and has only approved plugins");
+	}
+	else if(pluginMatch == sizeof(g_compPlugins))
+	{
+		ReplyToCommand(client, "Server has all comp plugins and also some extra plugins");
+	}
+	else
+	{
+		ReplyToCommand(client, "Server is NOT suitable for comp");
 	}
 	
 	delete PluginIter;
