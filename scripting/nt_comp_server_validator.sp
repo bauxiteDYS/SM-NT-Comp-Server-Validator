@@ -1,11 +1,18 @@
 #include <sourcemod>
 
 public Plugin myinfo = {
-	name = "NT Comp Server Validator",
+	name = "Comp Server Validator",
 	description = "Validates the server plugins and settings",
 	author = "bauxite",
-	version = "0.1.1",
+	version = "0.1.3",
 	url = "",
+};
+
+static char g_compPlugins[][] = {
+	"Admin File Reader:1.11.0.6939",
+	"No Block:1.0.0.0",
+	"NT Team join chat commands:2.0",
+	"NT Force to Spectator:1.0",
 };
 
 public void OnPluginStart()
@@ -22,11 +29,15 @@ public Action Cmd_Validate(int client, int args)
 
 void ValidateServer(int client)
 {
-	char Plugin_Name[128];
-	char Plugin_Version[64];
+
+	int pluginMatch;
+	int totalPlugins;
 	
-	char Plugin_Compare[256];
-	char Last_Plugin[256];
+	char pluginName[128];
+	char pluginVersion[64];
+	
+	char pluginCompare[256];
+	char lastPlugin[256];
 	
 	Handle PluginIter = GetPluginIterator();
 	
@@ -34,17 +45,36 @@ void ValidateServer(int client)
 	{
 		Handle CurrentPlugin = ReadPlugin(PluginIter);
 		
-		GetPluginInfo(CurrentPlugin, PlInfo_Name, Plugin_Name, sizeof(Plugin_Name));
-		GetPluginInfo(CurrentPlugin, PlInfo_Version, Plugin_Version, sizeof(Plugin_Version));
+		GetPluginInfo(CurrentPlugin, PlInfo_Name, pluginName, sizeof(pluginName));
+		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
 		
-		Format(Plugin_Compare, sizeof(Plugin_Compare), "Name:%s Version:%s", Plugin_Name, Plugin_Version);
+		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
 		
-		if(!StrEqual(Last_Plugin, Plugin_Compare, true))
+		if(!StrEqual(lastPlugin, pluginCompare, true))
 		{
-			PrintToConsole(client, "%s", Plugin_Compare);
-			PrintToServer("%s", Plugin_Compare);
-			strcopy(Last_Plugin, sizeof(Plugin_Compare), Plugin_Compare);
+			ReplyToCommand(client, "%s", pluginCompare);
+
+			strcopy(lastPlugin, sizeof(pluginCompare), pluginCompare);
+			
+			++totalPlugins;
+			
+			for(int i = 0; i < sizeof(g_compPlugins); i++)
+			{
+				if(StrEqual(g_compPlugins[i], pluginCompare, true))
+				{
+					pluginMatch += 1
+				}
+			}
 		}
+	}
+	
+	
+	ReplyToCommand(client, "Matched plugins %d", pluginMatch);
+	ReplyToCommand(client, "total plugins %d", totalPlugins);
+	
+	if(pluginMatch == totalPlugins)
+	{
+		ReplyToCommand(client, "server validated");
 	}
 	
 	delete PluginIter;
