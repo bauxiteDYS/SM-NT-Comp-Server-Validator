@@ -4,7 +4,7 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates the server plugins and settings",
 	author = "bauxite",
-	version = "0.1.5",
+	version = "0.1.6",
 	url = "",
 };
 
@@ -13,6 +13,11 @@ static char g_compPlugins[][] = {
 	"No Block:1.0.0.0",
 	"NT Team join chat commands:2.0",
 	"NT Force to Spectator:1.0",
+	"NEOTOKYO° Damage counter:0.7.5",
+	"NEOTOKYO° Ghost capture event:1.10.1",
+	"Flip a Coin / mini-game:0.1.3",
+	"NEOTOKYO° Temporary score saver:0.5.3",
+	"NEOTOKYO° Unlimited squad size:1.3",
 };
 
 public void OnPluginStart()
@@ -29,7 +34,6 @@ public Action Cmd_Validate(int client, int args)
 
 void ValidateServer(int client)
 {
-
 	int pluginMatch;
 	int totalPlugins;
 	
@@ -45,7 +49,12 @@ void ValidateServer(int client)
 	{
 		Handle CurrentPlugin = ReadPlugin(PluginIter);
 		
-		GetPluginInfo(CurrentPlugin, PlInfo_Name, pluginName, sizeof(pluginName));
+		if(!GetPluginInfo(CurrentPlugin, PlInfo_Name, pluginName, sizeof(pluginName)))
+		{
+			++totalPlugins;
+			ReplyToCommand(client, "a plugin didn't have a name, adding it to the total plugins count anyway");
+		}
+		
 		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
 		
 		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
@@ -69,8 +78,8 @@ void ValidateServer(int client)
 	}
 	
 	
-	ReplyToCommand(client, "Matched plugins %d", pluginMatch);
-	ReplyToCommand(client, "Total plugins %d", totalPlugins);
+	ReplyToCommand(client, "Matched plugins %d out of %d required", pluginMatch, sizeof(g_compPlugins));
+	ReplyToCommand(client, "Total plugins on server %d", totalPlugins);
 	
 	if(pluginMatch == totalPlugins)
 	{
