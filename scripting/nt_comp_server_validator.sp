@@ -4,7 +4,7 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates the server plugins and settings",
 	author = "bauxite",
-	version = "0.1.6",
+	version = "0.1.7",
 	url = "",
 };
 
