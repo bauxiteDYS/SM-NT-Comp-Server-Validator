@@ -126,7 +126,7 @@ void ValidateServer(int client)
 	
 	Handle PluginIter = GetPluginIterator();
 	
-	PrintToConsole(client, "--------- Plugins that didn't match ---------");
+	PrintToConsole(client, "-------- Plugins that didn't match --------");
 	
 	while (MorePlugins(PluginIter))
 	{
@@ -192,7 +192,7 @@ void ValidateServer(int client)
 		
 	}
 	
-	PrintToConsole(client, "--------- Validation Result ---------");
+	PrintToConsole(client, "------------ Validation Result ------------");
 	
 	PrintToConsole(client, "Matched %d plugins out of %d required for comp", pluginMatch, sizeof(g_compPlugins));
 	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
@@ -222,7 +222,7 @@ void ValidateServer(int client)
 		PrintToServer(msg);
 	}
 	
-	PrintToConsole(client, "-------------------------------------");
+	PrintToConsole(client, "-------------------------------------------");
 	
 	delete PluginIter;
 }
