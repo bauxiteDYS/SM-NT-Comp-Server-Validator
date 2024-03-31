@@ -4,12 +4,14 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates the server plugins",
 	author = "bauxite",
-	version = "0.1.7",
+	version = "0.1.9",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
+bool validateCooldown;
+
 static char g_compPlugins[][] = {
-	"Comp Server Validator:0.1.7",
+	"Comp Server Validator:0.1.9",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT Anti Ghosthop:2.0.5",
@@ -43,6 +45,33 @@ static char g_compPlugins[][] = {
 	"NEOTOKYO° Unlimited squad size:1.3",
 };
 
+static char g_defaultPlugins[][] = {
+	"Admin File Reader",
+	"SQL Admins (Prefetch)",
+	"SQL Admins (Threaded)",
+	"Admin Help",
+	"Admin Menu",
+	"Anti-Flood",
+	"Basic Ban Commands",
+	"Basic Chat",
+	"Basic Comm Control",
+	"Basic Commands",
+	"Basic Info Triggers",
+	"Basic Votes",
+	"Client Preferences",
+	"Fun Commands",
+	"Fun Votes",
+	"MapChooser",
+	"Nextmap",
+	"Map Nominations",
+	"Player Commands",
+	"RandomCycle",
+	"Reserved Slots",
+	"Rock The Vote",
+	"Sound Commands",
+	"SQL Admin Manager",
+}
+
 public void OnPluginStart()
 {
 	RegAdminCmd("sm_validate", Cmd_Validate, ADMFLAG_GENERIC);
@@ -50,74 +79,127 @@ public void OnPluginStart()
 
 public Action Cmd_Validate(int client, int args)
 {
+	if (validateCooldown)
+	{
+		ReplyToCommand(client, "Validate is on cooldown, wait 10s");
+		return Plugin_Stop;
+	}
+	
 	ValidateServer(client);
+	
+	validateCooldown = true;
+	
+	CreateTimer(10.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	return Plugin_Handled;
 }
 
+public Action ResetValidateCooldown(Handle timer)
+{
+	validateCooldown = false;
+	
+	return Plugin_Stop;
+}
+
 void ValidateServer(int client)
 {
+	if(SOURCEMOD_V_MAJOR != 1 || SOURCEMOD_V_MINOR  < 11)
+	{
+		char msg[] = "Sourcemod version less than 1.11 is not supported for comp";
+		
+		PrintToConsoleAll(msg);
+		PrintToChatAll(msg);
+		PrintToServer(msg);
+		
+		return;
+	}
+	
 	int pluginMatch;
 	int totalPlugins;
 	
 	char pluginName[128];
 	char pluginVersion[64];
 	
+	char lastPluginName[128];
+	
 	char pluginCompare[256];
-	char lastPlugin[256];
 	
 	Handle PluginIter = GetPluginIterator();
 	
-	PrintToConsole(client, "--------- Plugins On Server ---------");
+	PrintToConsole(client, "--------- Plugins that didn't match ---------");
 	
 	while (MorePlugins(PluginIter))
 	{
 		Handle CurrentPlugin = ReadPlugin(PluginIter);
 		
-		bool matched;
+		bool defaultPlugin;
 		
 		if(!GetPluginInfo(CurrentPlugin, PlInfo_Name, pluginName, sizeof(pluginName)))
 		{
 			++totalPlugins;
-			PrintToServer("Plugin didn't have a name, adding it to the total plugins count");
+			//PrintToServer("Plugin didn't have a name, adding it to the total plugins count");
 		}
+		else
+		{
+			if(StrEqual(lastPluginName, pluginName, true))
+			{
+				//PrintToServer("duplicate plugin, skipping: %s", pluginName);
+		
+				continue;
+			}
+			
+			strcopy(lastPluginName, sizeof(pluginName), pluginName);
+			
+			for(int i = 0; i < sizeof(g_defaultPlugins); i++)
+			{
+				if(StrEqual(g_defaultPlugins[i], pluginName, true))
+				{
+					defaultPlugin = true;
+				}
+			}
+			
+			if(defaultPlugin)
+			{
+				//PrintToServer("default plugin, ignoring: %s", pluginName);
+				
+				continue;
+			}
+		}
+		
+		bool matched; 
 		
 		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
 		
 		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
 		
-		if(!StrEqual(lastPlugin, pluginCompare, true))
+		//PrintToConsole(client, "%s", pluginCompare);
+			
+		++totalPlugins;
+			
+		for(int i = 0; i < sizeof(g_compPlugins); i++)
 		{
-			PrintToConsole(client, "%s", pluginCompare);
-
-			strcopy(lastPlugin, sizeof(pluginCompare), pluginCompare);
-			
-			++totalPlugins;
-			
-			for(int i = 0; i < sizeof(g_compPlugins); i++)
+			if(StrEqual(g_compPlugins[i], pluginCompare, true))
 			{
-				if(StrEqual(g_compPlugins[i], pluginCompare, true))
-				{
-					pluginMatch += 1;
-					matched = true;
-				}
-			}
-			
-			if(!matched)
-			{
-				PrintToServer("Plugin didn't match or isn't on the comp list: %s", pluginCompare);
+				++pluginMatch;
+				matched = true;
 			}
 		}
+			
+		if(!matched)
+		{
+			PrintToConsole(client, "%s", pluginCompare);
+		}
+		
 	}
 	
 	PrintToConsole(client, "--------- Validation Result ---------");
 	
-	PrintToConsole(client, "Matched %d plugins out of %d required", pluginMatch, sizeof(g_compPlugins));
-	PrintToConsole(client, "Total plugins on server: %d", totalPlugins);
+	PrintToConsole(client, "Matched %d plugins out of %d required for comp", pluginMatch, sizeof(g_compPlugins));
+	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
 	
 	if(pluginMatch == totalPlugins)
 	{
-		char msg[] = "Server validated : it has only approved plugins with the correct version"
+		char msg[] = "Server validated : it has only approved plugins with the correct version";
 		
 		PrintToConsoleAll(msg);
 		PrintToChatAll(msg);
@@ -125,7 +207,7 @@ void ValidateServer(int client)
 	}
 	else if(pluginMatch == sizeof(g_compPlugins))
 	{
-		char msg[] = "Server validated : It has all required comp plugins with the correct version, but also additional unknown plugins"
+		char msg[] = "Server validated : It has all required comp plugins with the correct versions, but also additional unknown plugins";
 		
 		PrintToConsoleAll(msg);
 		PrintToChatAll(msg);
@@ -133,7 +215,7 @@ void ValidateServer(int client)
 	}
 	else
 	{
-		char msg[] = "Server is NOT suitable for comp as required plugins are missing, or not the correct versions"
+		char msg[] = "Server is NOT suitable for comp as required plugins are missing, or not the correct versions";
 		
 		PrintToConsoleAll(msg);
 		PrintToChatAll(msg);
