@@ -4,14 +4,15 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates the server plugins",
 	author = "bauxite",
-	version = "0.1.9",
+	version = "0.2.1",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
+bool g_matchedPluginsList[32];
 bool validateCooldown;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:0.1.9",
+	"Comp Server Validator:0.2.1",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT Anti Ghosthop:2.0.5",
@@ -86,9 +87,7 @@ public Action Cmd_Validate(int client, int args)
 	}
 	
 	ValidateServer(client);
-	
 	validateCooldown = true;
-	
 	CreateTimer(10.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	return Plugin_Handled;
@@ -97,7 +96,6 @@ public Action Cmd_Validate(int client, int args)
 public Action ResetValidateCooldown(Handle timer)
 {
 	validateCooldown = false;
-	
 	return Plugin_Stop;
 }
 
@@ -106,11 +104,7 @@ void ValidateServer(int client)
 	if(SOURCEMOD_V_MAJOR != 1 || SOURCEMOD_V_MINOR  < 11)
 	{
 		char msg[] = "Sourcemod version less than 1.11 is not supported for comp";
-		
-		PrintToConsoleAll(msg);
-		PrintToChatAll(msg);
-		PrintToServer(msg);
-		
+		ReplyToCommand(client, msg);
 		return;
 	}
 	
@@ -119,14 +113,12 @@ void ValidateServer(int client)
 	
 	char pluginName[128];
 	char pluginVersion[64];
-	
 	char lastPluginName[128];
-	
 	char pluginCompare[256];
 	
 	Handle PluginIter = GetPluginIterator();
 	
-	PrintToConsole(client, "-------- Plugins that didn't match --------");
+	PrintToConsole(client, "---- Non-default Plugins on the Server ----");
 	
 	while (MorePlugins(PluginIter))
 	{
@@ -144,7 +136,6 @@ void ValidateServer(int client)
 			if(StrEqual(lastPluginName, pluginName, true))
 			{
 				//PrintToServer("duplicate plugin, skipping: %s", pluginName);
-		
 				continue;
 			}
 			
@@ -161,18 +152,15 @@ void ValidateServer(int client)
 			if(defaultPlugin)
 			{
 				//PrintToServer("default plugin, ignoring: %s", pluginName);
-				
 				continue;
 			}
 		}
-		
-		bool matched; 
 		
 		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
 		
 		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
 		
-		//PrintToConsole(client, "%s", pluginCompare);
+		PrintToConsole(client, "%s", pluginCompare);
 			
 		++totalPlugins;
 			
@@ -181,21 +169,16 @@ void ValidateServer(int client)
 			if(StrEqual(g_compPlugins[i], pluginCompare, true))
 			{
 				++pluginMatch;
-				matched = true;
+				g_matchedPluginsList[i] = true;
 			}
 		}
-			
-		if(!matched)
-		{
-			PrintToConsole(client, "%s", pluginCompare);
-		}
-		
 	}
 	
 	PrintToConsole(client, "------------ Validation Result ------------");
-	
 	PrintToConsole(client, "Matched %d plugins out of %d required for comp", pluginMatch, sizeof(g_compPlugins));
 	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
+	
+	bool missingPlugins;
 	
 	if(pluginMatch == totalPlugins)
 	{
@@ -220,9 +203,31 @@ void ValidateServer(int client)
 		PrintToConsoleAll(msg);
 		PrintToChatAll(msg);
 		PrintToServer(msg);
+		
+		missingPlugins = true;
 	}
 	
-	PrintToConsole(client, "-------------------------------------------");
+	if(!missingPlugins)
+	{
+		PrintToConsole(client, "There are no missing plugins!");
+		PrintToConsole(client, "-------------------------------------------");
+	}
+	else
+	{
+		PrintToConsole(client, "-------- Plugins that didn't match --------");
+	
+		for(int i = 0; i < 32; i++)
+		{
+		
+			if(!g_matchedPluginsList[i])
+			{
+				PrintToConsole(client, "%s", g_compPlugins[i]);
+			}
+		
+			g_matchedPluginsList[i] = false;
+		}
+		PrintToConsole(client, "-------------------------------------------");
+	}
 	
 	delete PluginIter;
 }
