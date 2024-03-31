@@ -2,17 +2,18 @@
 
 public Plugin myinfo = {
 	name = "Comp Server Validator",
-	description = "Validates the server plugins",
+	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "0.2.3",
+	version = "0.3.0",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 bool g_matchedPluginsList[64+1];
 bool validateCooldown;
+bool listPlugins;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:0.2.3",
+	"Comp Server Validator:0.3.0",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT Ghost Distribution:0.1.0",
@@ -75,6 +76,23 @@ static char g_defaultPlugins[][] = {
 public void OnPluginStart()
 {
 	RegAdminCmd("sm_validate", Cmd_Validate, ADMFLAG_GENERIC);
+	RegAdminCmd("sm_listplugins", Cmd_ListPlugins, ADMFLAG_GENERIC);
+}
+
+public Action Cmd_ListPlugins(int client, int args)
+{
+	if (validateCooldown)
+	{
+		ReplyToCommand(client, "List Plugins is on cooldown, wait 10s");
+		return Plugin_Stop;
+	}
+	
+	listPlugins = true;
+	ValidateServer(client);
+	validateCooldown = true;
+	CreateTimer(10.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
+	
+	return Plugin_Handled;
 }
 
 public Action Cmd_Validate(int client, int args)
@@ -117,9 +135,16 @@ void ValidateServer(int client)
 	
 	Handle PluginIter = GetPluginIterator();
 	
-	PrintToConsole(client, "<---- Plugins that aren't default or in comp list ---->");
-	PrintToConsole(client, " ");
-	
+	if(!listPlugins)
+	{
+		PrintToConsole(client, "<---- Plugins that aren't default or in comp list ---->");
+		PrintToConsole(client, " ");
+	}
+	else
+	{
+		PrintToConsole(client, "<--------------- Plugins on the server --------------->");
+		PrintToConsole(client, " ");
+	}
 	
 	while (MorePlugins(PluginIter))
 	{
@@ -141,7 +166,13 @@ void ValidateServer(int client)
 		}
 		
 		strcopy(lastPluginName, sizeof(pluginName), pluginName);
-			
+		
+		if(listPlugins)
+		{
+			PrintToConsole(client, "%s", pluginName);
+			continue;
+		}
+		
 		if(unNamed)
 		{
 			++totalPlugins;
@@ -188,7 +219,16 @@ void ValidateServer(int client)
 	
 	}
 	
-	
+	if(listPlugins)
+	{
+		PrintToConsole(client, " ");
+		PrintToConsole(client, "<----------------------------------------------------->");
+		delete PluginIter;
+		listPlugins = false;
+		return;
+	}
+		
+		
 	PrintToConsole(client, " ");
 	PrintToConsole(client, "<----------------- Validation Result ----------------->");
 	PrintToConsole(client, " ");
