@@ -4,18 +4,20 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "0.3.1",
+	version = "0.3.3",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 #define NUMBER_OF_COMP_PLUGINS 32
+
+static char g_competition[] = "Generic 5v5 competitive server, Date: 2024-04-01";
 
 bool g_matchedPluginsList[NUMBER_OF_COMP_PLUGINS];
 bool g_validateCooldown;
 bool g_listPlugins;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:0.3.1",
+	"Comp Server Validator:0.3.3",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT Ghost Distribution:0.1.0",
@@ -24,13 +26,13 @@ static char g_compPlugins[][] = {
 	"NT Chat Prefixed:1.0.0",
 	"NT Competitive Clantag Updater:0.6.1",
 	"NT Enforce Comp Values:0.2.0",
-	"NT Comp Warmup God Mode:0.1.2",
+	"NT Comp Warmup God Mode:0.1.1",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.7",
 	"NT Killer Info Display, streamlined for NT and with chat relay:0.1.9",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
-	"Neotokyo Competitive Plugin:3.0.1",
+	"Neotokyo Competitive Plugin:3.0.2",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
 	"NEOTOKYO OnRoundConcluded Event:0.1.0",
@@ -85,14 +87,14 @@ public Action Cmd_ListPlugins(int client, int args)
 {
 	if (g_validateCooldown)
 	{
-		ReplyToCommand(client, "List Plugins is on cooldown, wait 10s");
+		ReplyToCommand(client, "List Plugins is on cooldown, wait 7s");
 		return Plugin_Stop;
 	}
 	
 	g_listPlugins = true;
 	ValidateServer(client);
 	g_validateCooldown = true;
-	CreateTimer(10.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	return Plugin_Handled;
 }
@@ -101,13 +103,13 @@ public Action Cmd_Validate(int client, int args)
 {
 	if (g_validateCooldown)
 	{
-		ReplyToCommand(client, "Validate is on cooldown, wait 10s");
+		ReplyToCommand(client, "Validate is on cooldown, wait 7s");
 		return Plugin_Stop;
 	}
 	
 	ValidateServer(client);
 	g_validateCooldown = true;
-	CreateTimer(10.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	return Plugin_Handled;
 }
@@ -240,7 +242,8 @@ void ValidateServer(int client)
 	PrintToConsole(client, " ");
 	PrintToConsole(client, "<----------------- Validation Result ----------------->");
 	PrintToConsole(client, " ");
-	PrintToConsole(client, "Matched %d plugins out of %d required for comp", pluginMatch, sizeof(g_compPlugins));
+	PrintToConsole(client, g_competition);
+	PrintToConsole(client, "Matched %d plugins out of %d required", pluginMatch, sizeof(g_compPlugins));
 	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
 	
 	if(pluginMatch == totalPlugins)
