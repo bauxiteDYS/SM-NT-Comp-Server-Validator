@@ -4,31 +4,31 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "0.3.3",
+	version = "0.3.4",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 #define NUMBER_OF_COMP_PLUGINS 32
 
-static char g_competition[] = "Generic 5v5 competitive server, Date: 2024-04-01";
+static char g_competition[] = "Generic 5v5 competitive server, Date: 2024-07-09";
 
 bool g_matchedPluginsList[NUMBER_OF_COMP_PLUGINS];
 bool g_validateCooldown;
 bool g_listPlugins;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:0.3.3",
+	"Comp Server Validator:0.3.4",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT Ghost Distribution:0.1.0",
-	"NT Anti Ghosthop:2.0.5",
+	"NT Anti Ghosthop:3.0.0",
 	"NT Team join chat commands:2.0",
 	"NT Chat Prefixed:1.0.0",
 	"NT Competitive Clantag Updater:0.6.1",
 	"NT Enforce Comp Values:0.2.0",
 	"NT Comp Warmup God Mode:0.1.1",
 	"NT Dead Chat Comp:0.1.1",
-	"NT Competitive Fade Fix:0.5.7",
+	"NT Competitive Fade Fix:0.5.8",
 	"NT Killer Info Display, streamlined for NT and with chat relay:0.1.9",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
@@ -39,7 +39,7 @@ static char g_compPlugins[][] = {
 	"NEOTOKYO° Double cap prevention:2.0.3",
 	"NEOTOKYO° Anti Ghost Cap Deny:1.3.1",
 	"NEOTOKYO° Assist:1.0.1",
-	"NEOTOKYO° Damage counter:0.7.5",
+	"NEOTOKYO° Damage counter:0.7.6",
 	"NEOTOKYO° Weapon Drop Tweaks:0.8.4",
 	"NEOTOKYO° Ghost capture event:1.10.1",
 	"NEOTOKYO° Input tweaks:0.2.1",
