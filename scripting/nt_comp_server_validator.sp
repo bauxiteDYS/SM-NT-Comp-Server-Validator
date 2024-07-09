@@ -4,20 +4,18 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "SS24",
+	version = "SS24-20240709",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
-#define NUMBER_OF_COMP_PLUGINS 35
+static char g_competition[] = "Tournament: SS24";
 
-static char g_competition[] = "SS24";
-
-bool g_matchedPluginsList[NUMBER_OF_COMP_PLUGINS + 1];
+bool g_matchedPluginsList[128];
 bool g_validateCooldown;
 bool g_listPlugins;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:SS24",
+	"Comp Server Validator:SS24-20240709",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"Websocket:1.2",
@@ -39,7 +37,7 @@ static char g_compPlugins[][] = {
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
 	"NEOTOKYO OnRoundConcluded Event:0.1.0",
-	"NEOTOKYO° Ghost spawn bias",
+	"NEOTOKYO° Ghost spawn bias:0.2.3",
 	"NEOTOKYO° Anti Ghost Cap Deny:1.3.1",
 	"NEOTOKYO° Assist:1.0.1",
 	"NEOTOKYO° Damage counter:0.7.6",
@@ -109,6 +107,11 @@ public Action Cmd_Validate(int client, int args)
 	{
 		ReplyToCommand(client, "Validate is on cooldown, wait 7s");
 		return Plugin_Stop;
+	}
+	
+	for(int i = 0; i < sizeof(g_matchedPluginsList); i++)
+	{
+		g_matchedPluginsList[i] = false;
 	}
 	
 	ValidateServer(client);
@@ -218,9 +221,9 @@ void ValidateServer(int client)
 		{
 			if(StrEqual(g_compPlugins[i], pluginCompare, true))
 			{
-				++pluginMatch;
 				g_matchedPluginsList[i] = true;
 				matched = true;
+				++pluginMatch;
 			}
 		}
 		
@@ -252,11 +255,11 @@ void ValidateServer(int client)
 	
 	if(pluginMatch == totalPlugins)
 	{
-		msg = "Server validated : it has only approved plugins with the correct version";
+		msg = "Server validated : it has only approved plugins with the correct version, configs might need admin approval";
 	}
 	else if(pluginMatch == sizeof(g_compPlugins) && totalPlugins >= pluginMatch)
 	{
-		msg = "Server validated : It has all required comp plugins with the correct versions, but also additional unknown plugins";
+		msg = "Validation needs admin approval : It has all required comp plugins, but also additional unknown plugins";
 	}
 	else if(pluginMatch < sizeof(g_compPlugins))
 	{
