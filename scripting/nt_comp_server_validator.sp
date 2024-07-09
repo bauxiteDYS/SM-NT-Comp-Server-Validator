@@ -4,20 +4,20 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "0.3.4",
+	version = "SS24",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 #define NUMBER_OF_COMP_PLUGINS 32
 
-static char g_competition[] = "Generic 5v5 competitive server, Date: 2024-07-09";
+static char g_competition[] = "SS24";
 
-bool g_matchedPluginsList[NUMBER_OF_COMP_PLUGINS];
+bool g_matchedPluginsList[NUMBER_OF_COMP_PLUGINS + 1];
 bool g_validateCooldown;
 bool g_listPlugins;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:0.3.4",
+	"Comp Server Validator:SS24",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT Ghost Distribution:0.1.0",
@@ -32,6 +32,7 @@ static char g_compPlugins[][] = {
 	"NT Killer Info Display, streamlined for NT and with chat relay:0.1.9",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
+	"Neotokyo Class Limits:1.4.0",
 	"Neotokyo Competitive Plugin:3.0.2",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
