@@ -8,7 +8,7 @@ public Plugin myinfo = {
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
-#define NUMBER_OF_COMP_PLUGINS 32
+#define NUMBER_OF_COMP_PLUGINS 35
 
 static char g_competition[] = "SS24";
 
@@ -20,11 +20,13 @@ static char g_compPlugins[][] = {
 	"Comp Server Validator:SS24",
 	"No Block:1.0.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
+	"Websocket:1.2",
 	"NT Ghost Distribution:0.1.0",
 	"NT Anti Ghosthop:3.0.0",
 	"NT Team join chat commands:2.0",
 	"NT Chat Prefixed:1.0.0",
 	"NT Competitive Clantag Updater:0.6.1",
+	"NT Competitive Vetos:1.3.1",
 	"NT Enforce Comp Values:0.2.0",
 	"NT Comp Warmup God Mode:0.1.1",
 	"NT Dead Chat Comp:0.1.1",
@@ -49,6 +51,7 @@ static char g_compPlugins[][] = {
 	"NEOTOKYO° Tachi fix:0.2.1",
 	"NEOTOKYO° Teamkill Penalty Fix:1.0.1",
 	"NEOTOKYO° Unlimited squad size:1.3",
+	"Neotokyo WebSocket:1.6.2",
 };
 
 static char g_defaultPlugins[][] = {
