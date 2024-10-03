@@ -4,52 +4,51 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "0.3.4",
+	version = "5v5-2024",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
-#define NUMBER_OF_COMP_PLUGINS 32
+// These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
+// Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 
-static char g_competition[] = "Generic 5v5 competitive server, Date: 2024-07-09";
+static char g_competition[] = "Tournament: Generic 5v5 2024";
 
-bool g_matchedPluginsList[NUMBER_OF_COMP_PLUGINS];
+bool g_matchedPluginsList[128];
 bool g_validateCooldown;
 bool g_listPlugins;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:0.3.4",
+	"Comp Server Validator:5v5-2024",
 	"No Block:1.0.0.0",
-	"Automatic hud_reloadscheme:1.3.1",
-	"NT Ghost Distribution:0.1.0",
+	"Websocket:1.2",
+	"NT Win Condition:0.0.7",
 	"NT Anti Ghosthop:3.0.0",
-	"NT Team join chat commands:2.0",
-	"NT Chat Prefixed:1.0.0",
-	"NT Competitive Clantag Updater:0.6.1",
 	"NT Enforce Comp Values:0.2.0",
-	"NT Comp Warmup God Mode:0.1.1",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
 	"NT Killer Info Display, streamlined for NT and with chat relay:0.1.9",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
+	"NT Water Nades:0.1.1",
+	"NT Comp Warmup God Mode:0.1.1",
+	"Neotokyo Class Limits:1.4.0",
 	"Neotokyo Competitive Plugin:3.0.2",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
-	"NEOTOKYO OnRoundConcluded Event:0.1.0",
-	"NEOTOKYO° Double cap prevention:2.0.3",
+	"NEOTOKYO° Ghost spawn bias:0.2.3",
 	"NEOTOKYO° Anti Ghost Cap Deny:1.3.1",
 	"NEOTOKYO° Assist:1.0.1",
 	"NEOTOKYO° Damage counter:0.7.6",
 	"NEOTOKYO° Weapon Drop Tweaks:0.8.4",
 	"NEOTOKYO° Ghost capture event:1.10.1",
-	"NEOTOKYO° Input tweaks:0.2.1",
 	"NEOTOKYO° Temporary score saver:0.5.3",
-	"NEOTOKYO° Vision modes for spectators:0.12",
 	"NEOTOKYO° Tachi fix:0.2.1",
 	"NEOTOKYO° Teamkill Penalty Fix:1.0.1",
 	"NEOTOKYO° Unlimited squad size:1.3",
+	"Neotokyo WebSocket:1.6.2",
 };
 
+//firstly the sourcemod plugins and then some commonly used plugins
 static char g_defaultPlugins[][] = {
 	"Admin File Reader",
 	"Admin Help",
@@ -75,6 +74,24 @@ static char g_defaultPlugins[][] = {
 	"SQL Admin Manager",
 	"SQL Admins (Prefetch)",
 	"SQL Admins (Threaded)",
+	"Simple Adverts",
+	"Advertisements",
+	"NT Observer PVS Bypass",
+	"NT Spectator Quick Target",
+	"NEOTOKYO° Player count events",
+	"NEOTOKYO° Vision modes for spectators",
+	"NEOTOKYO° Input tweaks",
+	"NT Competitive Vetos",
+	"NT Competitive Clantag Updater",
+	"Automatic hud_reloadscheme",
+	"NT Team join chat commands",
+	"NT Chat Prefixed",
+	"Flip a Coin",
+	"Flip a Coin / mini-game",
+	"Empty Server map reloader",
+	"NT Force to Spectator",
+	"Force to Spectator",
+	"NEOTOKYO OnRoundConcluded Event",
 };
 
 public void OnPluginStart()
@@ -105,6 +122,11 @@ public Action Cmd_Validate(int client, int args)
 	{
 		ReplyToCommand(client, "Validate is on cooldown, wait 7s");
 		return Plugin_Stop;
+	}
+	
+	for(int i = 0; i < sizeof(g_matchedPluginsList); i++)
+	{
+		g_matchedPluginsList[i] = false;
 	}
 	
 	ValidateServer(client);
@@ -214,9 +236,9 @@ void ValidateServer(int client)
 		{
 			if(StrEqual(g_compPlugins[i], pluginCompare, true))
 			{
-				++pluginMatch;
 				g_matchedPluginsList[i] = true;
 				matched = true;
+				++pluginMatch;
 			}
 		}
 		
@@ -248,11 +270,11 @@ void ValidateServer(int client)
 	
 	if(pluginMatch == totalPlugins)
 	{
-		msg = "Server validated : it has only approved plugins with the correct version";
+		msg = "Server validated : it has only approved plugins with the correct version, configs might need admin approval";
 	}
 	else if(pluginMatch == sizeof(g_compPlugins) && totalPlugins >= pluginMatch)
 	{
-		msg = "Server validated : It has all required comp plugins with the correct versions, but also additional unknown plugins";
+		msg = "Validation needs admin approval : It has all required comp plugins, but also additional unknown plugins";
 	}
 	else if(pluginMatch < sizeof(g_compPlugins))
 	{
