@@ -4,21 +4,21 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "5v5-2024",
+	version = "5v5-20241101",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 
-static char g_competition[] = "Tournament: Generic 5v5 2024";
+static char g_competition[] = "Tournament: Generic 5v5 2024-11-01";
 
 bool g_matchedPluginsList[128];
 bool g_validateCooldown;
 bool g_listPlugins;
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:5v5-2024",
+	"Comp Server Validator:5v5-20241101",
 	"No Block:1.0.0.0",
 	"Websocket:1.2",
 	"NT Win Condition:0.0.7",
@@ -31,7 +31,6 @@ static char g_compPlugins[][] = {
 	"NT Physics Unstuck:0.6.4",
 	"NT Water Nades:0.1.1",
 	"NT Comp Warmup God Mode:0.1.1",
-	"Neotokyo Class Limits:1.4.0",
 	"Neotokyo Competitive Plugin:3.0.2",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
