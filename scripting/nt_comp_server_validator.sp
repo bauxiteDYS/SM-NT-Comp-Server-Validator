@@ -4,21 +4,67 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "5v5-20241101",
+	version = "5v5-20241201",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 
-static char g_competition[] = "Tournament: Generic 5v5 2024-11-01";
-
-bool g_matchedPluginsList[128];
 bool g_validateCooldown;
-bool g_listPlugins;
+
+static char g_competition[] = "Tournament: Generic 5v5 2024-12-01";
+
+static char g_cvarList[][][] = {
+	{"sm_competitive_round_style", "1"},
+	{"sm_competitive_round_limit", "15"},
+	{"sm_competitive_nozanshi", "0"},
+	{"sm_competitive_sudden_death", "1"},
+	{"sm_competitive_ghost_overtime", "45"},
+	{"sm_competitive_ghost_overtime_grace", "15"},
+	{"sm_competitive_ghost_overtime_decay_exp", "0"},
+	{"sv_minupdaterate", "66"},
+	{"sv_mincmdrate", "66"},
+	{"sv_minrate", "192000"},
+	{"sv_cheats", "0"},
+	{"sv_gravity", "800"},
+	{"neo_round_timelimit", "2.26"},
+	{"neo_ff_feedback", "0"},
+	{"neo_teamkill_punish", "0"},
+	{"sm_nt_squadautojoin", "1"},
+	{"sm_nt_squadlock", "1"},
+	{"sm_nt_fov_max", "90"},
+	{"sv_accelerate", "10"},
+	{"sv_airaccelerate", "10"},
+	{"sv_footsteps", "1"},
+	{"sv_friction", "4"},
+	{"sv_stepsize", "18"},
+	{"sv_backspeed", "0.6"},
+	{"sv_unlag", "1"},
+	{"sv_client_predict", "1"},
+	{"sv_pausable", "0"},
+	{"neo_disable_tie", "0"},
+	{"neo_score_limit", "99"},
+	{"kid_text_relay", "1"},
+	{"kid_panel_duration", "9"},
+	{"kid_printtopanel", "1"},
+	{"sm_ntdrop_nodespawn", "1"},
+	{"sm_nt_wincond_tiebreaker", "0"},
+	{"sm_nt_wincond_swapattackers", "0"},
+	{"sm_nt_wincond_captime", "0"},
+	{"sm_nt_wincond_consolation_rounds", "0"},
+	{"sm_nt_wincond_survivor_bonus", "1"},
+	{"sm_nt_wincond_ghost_reward", "0"},
+	{"sm_nt_ghost_bias_enabled", "1"},
+	{"sm_nt_ghost_bias_rounds", "2"},
+	{"sm_nt_anti_ghosthop_verbosity", "2"},
+	{"sm_nt_anti_ghosthop_speed_scale", "1.0"},
+	{"sm_nt_anti_ghosthop_n_extra_hops", "0"},
+	{"sm_loadout_rescue_allow_loadout_change", "0"},
+}
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:5v5-20241101",
+	"Comp Server Validator:5v5-20241201",
 	"No Block:1.0.0.0",
 	"Websocket:1.2",
 	"NT Win Condition:0.0.7",
@@ -45,7 +91,7 @@ static char g_compPlugins[][] = {
 	"NEOTOKYO° Teamkill Penalty Fix:1.0.1",
 	"NEOTOKYO° Unlimited squad size:1.3",
 	"Neotokyo WebSocket:1.6.2",
-};
+}; // stuck rescue
 
 //firstly the sourcemod plugins and then some commonly used plugins
 static char g_defaultPlugins[][] = {
@@ -107,8 +153,7 @@ public Action Cmd_ListPlugins(int client, int args)
 		return Plugin_Stop;
 	}
 	
-	g_listPlugins = true;
-	ValidateServer(client);
+	ValidateServerPlugins(client, true);
 	g_validateCooldown = true;
 	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -123,12 +168,8 @@ public Action Cmd_Validate(int client, int args)
 		return Plugin_Stop;
 	}
 	
-	for(int i = 0; i < sizeof(g_matchedPluginsList); i++)
-	{
-		g_matchedPluginsList[i] = false;
-	}
-	
-	ValidateServer(client);
+	ValidateServerPlugins(client);
+	ValidateServerCvars(client);
 	g_validateCooldown = true;
 	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -141,7 +182,7 @@ public Action ResetValidateCooldown(Handle timer)
 	return Plugin_Stop;
 }
 
-void ValidateServer(int client)
+void ValidateServerPlugins(int client, bool listPlugins = false)
 {
 	if(SOURCEMOD_V_MAJOR != 1 || SOURCEMOD_V_MINOR  < 11)
 	{
@@ -150,20 +191,20 @@ void ValidateServer(int client)
 		return;
 	}
 	
-	bool missingPlugins;
-	
-	int pluginMatch;
-	int totalPlugins;
-	
+	char g_serverPlugins[128][128];
 	char pluginName[128];
 	char pluginVersion[64];
-	char lastPluginName[128];
-	char pluginCompare[256];
+	char pluginCompare[192];
 	char msg[128];
-	
+	int dupes;
+	int pluginMatch;
+	int totalPlugins;
+	int unique;
+	bool g_matchedPluginsList[128];
+	bool missingPlugins;
 	Handle PluginIter = GetPluginIterator();
 	
-	if(!g_listPlugins)
+	if(!listPlugins)
 	{
 		PrintToConsole(client, "<---- Plugins that aren't default or in comp list ---->");
 		PrintToConsole(client, " ");
@@ -182,6 +223,7 @@ void ValidateServer(int client)
 		bool defaultPlugin;
 		bool unNamed;
 		bool matched;
+		bool dupe;
 		
 		if(!(GetPluginInfo(CurrentPlugin, PlInfo_Name, pluginName, sizeof(pluginName))))
 		{
@@ -189,20 +231,24 @@ void ValidateServer(int client)
 			unNamed = true;
 		}
 		
-		if(StrEqual(lastPluginName, pluginName, true))
+		for(int i = 0; i < sizeof(g_serverPlugins); i++)
 		{
-			//PrintToServer("duplicate plugin, skipping: %s", pluginName);
+			if(StrEqual(g_serverPlugins[i], pluginName, true))
+			{
+				dupes++;
+				dupe = true;
+			}
+		}
+		
+		if(dupe)
+		{
+			PrintToConsole(client, "Dupe plugin: %s", pluginName);
 			continue;
 		}
 		
-		strcopy(lastPluginName, sizeof(pluginName), pluginName);
+		++unique;
 		
-		if(g_listPlugins)
-		{
-			PrintToConsole(client, "%s", pluginName);
-			++totalPlugins;
-			continue;
-		}
+		strcopy(g_serverPlugins[unique - 1], sizeof(pluginName), pluginName);
 		
 		if(unNamed)
 		{
@@ -211,51 +257,63 @@ void ValidateServer(int client)
 			continue;
 		}
 		
-		for(int i = 0; i < sizeof(g_defaultPlugins); i++)
+		if(!listPlugins)
 		{
-			if(StrEqual(g_defaultPlugins[i], pluginName, true))
+			for(int i = 0; i < sizeof(g_defaultPlugins); i++)
 			{
-				defaultPlugin = true;
+				if(StrEqual(g_defaultPlugins[i], pluginName, true))
+				{
+					defaultPlugin = true;
+				}
 			}
-		}
 			
-		if(defaultPlugin)
-		{
-			//PrintToServer("default plugin, ignoring: %s", pluginName);
-			continue;
+			if(defaultPlugin)
+			{
+				//PrintToServer("default plugin, ignoring: %s", pluginName);
+				continue;
+			}
 		}
 		
 		++totalPlugins;
 		
+		pluginVersion[0] = '\0';
 		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
 		
 		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
 		
-		for(int i = 0; i < sizeof(g_compPlugins); i++)
+		if(!listPlugins)
 		{
-			if(StrEqual(g_compPlugins[i], pluginCompare, true))
+			for(int i = 0; i < sizeof(g_compPlugins); i++)
 			{
-				g_matchedPluginsList[i] = true;
-				matched = true;
-				++pluginMatch;
+				if(StrEqual(g_compPlugins[i], pluginCompare, true))
+				{
+					g_matchedPluginsList[i] = true;
+					matched = true;
+					++pluginMatch;
+				}
+			}
+		
+			if(!matched)
+			{
+				PrintToConsole(client, "%s", pluginCompare);
 			}
 		}
 		
-		if(!matched)
+		if(listPlugins)
 		{
 			PrintToConsole(client, "%s", pluginCompare);
 		}
-	
 	}
 	//
 	
-	if(g_listPlugins)
+	if(listPlugins)
 	{
 		PrintToConsole(client, "Total Plugins: %d", totalPlugins);
+		PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
 		PrintToConsole(client, " ");
 		PrintToConsole(client, "<----------------------------------------------------->");
 		
-		g_listPlugins = false;
+		listPlugins = false;
 		delete PluginIter;
 		return;
 	}
@@ -266,6 +324,7 @@ void ValidateServer(int client)
 	PrintToConsole(client, g_competition);
 	PrintToConsole(client, "Matched %d plugins out of %d required", pluginMatch, sizeof(g_compPlugins));
 	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
+	PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
 	
 	if(pluginMatch == totalPlugins)
 	{
@@ -315,4 +374,32 @@ void ValidateServer(int client)
 	}
 	
 	delete PluginIter;
+}
+
+void ValidateServerCvars(int client)
+{
+	if(SOURCEMOD_V_MAJOR != 1 || SOURCEMOD_V_MINOR  < 11)
+	{
+		return;
+	}
+	
+	for(int i = 0; i < sizeof(g_cvarList); i++)
+	{
+		char buff[64];
+		ConVar cvar = FindConVar(g_cvarList[i][0]);
+		
+		if(!IsValidHandle(cvar))
+		{
+			PrintToConsole(client, "%s - Not found", g_cvarList[i][0]);
+			continue;
+		}
+		
+		cvar.GetString(buff, sizeof(buff));
+		
+		if(!StrEqual(buff, g_cvarList[i][1], false))
+		{
+			PrintToConsole(client, "%s - Incorrect value", g_cvarList[i][0]);
+			PrintToConsole(client, "- Current value: %s - Required value: %s", buff, g_cvarList[i][1]);
+		}
+	}
 }
