@@ -1,19 +1,20 @@
+#include <regex>
 #include <sourcemod>
+
+#pragma semicolon 1
+#pragma newdecls required
 
 public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "5v5-20241201",
+	version = "5v5-20241203",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
-// These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
-// Have been tested extensively and appear to have no major bugs, and few features and fixes missing
-
 bool g_validateCooldown;
 
-static char g_competition[] = "Tournament: Generic 5v5 2024-12-01";
+static char g_competition[] = "Tournament: Generic 5v5 2024-12-03";
 
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
@@ -61,18 +62,22 @@ static char g_cvarList[][][] = {
 	{"sm_nt_anti_ghosthop_speed_scale", "1.0"},
 	{"sm_nt_anti_ghosthop_n_extra_hops", "0"},
 	{"sm_loadout_rescue_allow_loadout_change", "0"},
-}
+};
+
+// These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
+// Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:5v5-20241201",
-	"No Block:1.0.0.0",
+	"Comp Server Validator:5v5-20241203",
 	"Websocket:1.2",
-	"NT Win Condition:0.0.7",
+	"NT NoBlock:0.1.1",
+	"NT Stuck Rescue:0.1.0",
+	"NT Win Condition:0.0.9",
 	"NT Anti Ghosthop:3.0.0",
 	"NT Enforce Comp Values:0.2.0",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
-	"NT Killer Info Display, streamlined for NT and with chat relay:0.1.9",
+	"NT Killer Info:0.2.7",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
 	"NT Water Nades:0.1.1",
@@ -90,10 +95,12 @@ static char g_compPlugins[][] = {
 	"NEOTOKYO° Tachi fix:0.2.1",
 	"NEOTOKYO° Teamkill Penalty Fix:1.0.1",
 	"NEOTOKYO° Unlimited squad size:1.3",
+	"NEOTOKYO° Input tweaks:0.2.1",
 	"Neotokyo WebSocket:1.6.2",
-}; // stuck rescue
+};
 
 //firstly the sourcemod plugins and then some commonly used plugins
+
 static char g_defaultPlugins[][] = {
 	"Admin File Reader",
 	"Admin Help",
@@ -125,7 +132,6 @@ static char g_defaultPlugins[][] = {
 	"NT Spectator Quick Target",
 	"NEOTOKYO° Player count events",
 	"NEOTOKYO° Vision modes for spectators",
-	"NEOTOKYO° Input tweaks",
 	"NT Competitive Vetos",
 	"NT Competitive Clantag Updater",
 	"Automatic hud_reloadscheme",
@@ -137,6 +143,7 @@ static char g_defaultPlugins[][] = {
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
+	"No Block",
 };
 
 public void OnPluginStart()
@@ -153,7 +160,7 @@ public Action Cmd_ListPlugins(int client, int args)
 		return Plugin_Stop;
 	}
 	
-	ValidateServerPlugins(client, true);
+	ValidateServer(client, true);
 	g_validateCooldown = true;
 	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -168,8 +175,7 @@ public Action Cmd_Validate(int client, int args)
 		return Plugin_Stop;
 	}
 	
-	ValidateServerPlugins(client);
-	ValidateServerCvars(client);
+	ValidateServer(client);
 	g_validateCooldown = true;
 	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -182,9 +188,15 @@ public Action ResetValidateCooldown(Handle timer)
 	return Plugin_Stop;
 }
 
-void ValidateServerPlugins(int client, bool listPlugins = false)
+void ValidateServer(int client, bool listPlugins = false)
 {
-	if(SOURCEMOD_V_MAJOR != 1 || SOURCEMOD_V_MINOR  < 11)
+	int sm_major;
+	int sm_minor;
+	int sm_patch;
+	GetSmVersion(sm_major, sm_minor, sm_patch);
+	PrintToServer("SM %d %d %d", sm_major, sm_minor, sm_patch);
+	
+	if(sm_minor < 11)
 	{
 		char msg[] = "Sourcemod version less than 1.11 is not supported for comp";
 		ReplyToCommand(client, msg);
@@ -319,16 +331,26 @@ void ValidateServerPlugins(int client, bool listPlugins = false)
 	}
 		
 	PrintToConsole(client, " ");
-	PrintToConsole(client, "<----------------- Validation Result ----------------->");
+	PrintToConsole(client, "<------------------ Plugins Result ------------------->");
 	PrintToConsole(client, " ");
 	PrintToConsole(client, g_competition);
 	PrintToConsole(client, "Matched %d plugins out of %d required", pluginMatch, sizeof(g_compPlugins));
 	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
 	PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
+
+	PrintToConsole(client, "<------------------------CVARS------------------------>");
+	PrintToConsole(client, " ");
+	bool cvarsMatched = ValidateServerCvars(client);
+	PrintToConsole(client, " ");
+	PrintToConsole(client, "<----------------- Validation Result ----------------->");
 	
-	if(pluginMatch == totalPlugins)
+	if(pluginMatch == totalPlugins && cvarsMatched)
 	{
-		msg = "Server validated : it has only approved plugins with the correct version, configs might need admin approval";
+		msg = "Server validated : it has only approved plugins with the correct version and correct settings";
+	}
+	else if(pluginMatch == totalPlugins && !cvarsMatched)
+	{
+		msg = "Server mostly validated : it has only approved plugins with the correct version, settings need admin approval";
 	}
 	else if(pluginMatch == sizeof(g_compPlugins) && totalPlugins >= pluginMatch)
 	{
@@ -374,14 +396,12 @@ void ValidateServerPlugins(int client, bool listPlugins = false)
 	}
 	
 	delete PluginIter;
+	
 }
 
-void ValidateServerCvars(int client)
+bool ValidateServerCvars(int client)
 {
-	if(SOURCEMOD_V_MAJOR != 1 || SOURCEMOD_V_MINOR  < 11)
-	{
-		return;
-	}
+	bool cvarsMatched = true;
 	
 	for(int i = 0; i < sizeof(g_cvarList); i++)
 	{
@@ -390,6 +410,7 @@ void ValidateServerCvars(int client)
 		
 		if(!IsValidHandle(cvar))
 		{
+			cvarsMatched = false;
 			PrintToConsole(client, "%s - Not found", g_cvarList[i][0]);
 			continue;
 		}
@@ -398,8 +419,49 @@ void ValidateServerCvars(int client)
 		
 		if(!StrEqual(buff, g_cvarList[i][1], false))
 		{
+			cvarsMatched = false;
 			PrintToConsole(client, "%s - Incorrect value", g_cvarList[i][0]);
 			PrintToConsole(client, "- Current value: %s - Required value: %s", buff, g_cvarList[i][1]);
 		}
 	}
+	
+	return cvarsMatched;
+}
+
+// Passes the SemVer of the running SourceMod installation by reference.
+// Returns false on failure, and true on success.
+stock bool GetSmVersion(int& out_major, int& out_minor, int& out_patch)
+{
+	static int major = -1, minor, patch;
+
+	if (major == -1) {
+		// https://regexr.com/89i7n
+		Regex re = new Regex("\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}");
+		if (!re) {
+			return false;
+		}
+
+		char version[7+1]; // N.NN.NN\0
+		FindConVar("sourcemod_version").GetString(version, sizeof(version));
+		if (re.Match(version) == -1) {
+			delete re;
+			return false;
+		}
+
+		char versions[3][2];
+		if (sizeof(versions) != ExplodeString(version, ".", versions,
+			sizeof(versions), sizeof(versions[])+1)) {
+			delete re;
+			return false;
+		}
+		delete re;
+
+		if (!StringToIntEx(versions[0], major)) { return false; }
+		if (!StringToIntEx(versions[1], minor)) { return false; }
+		if (!StringToIntEx(versions[2], patch)) { return false; }
+    }
+	out_major = major;
+	out_minor = minor;
+	out_patch = patch;
+	return true;
 }
