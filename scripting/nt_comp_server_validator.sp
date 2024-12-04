@@ -193,8 +193,8 @@ void ValidateServer(int client, bool listPlugins = false)
 	int sm_major;
 	int sm_minor;
 	int sm_patch;
+	
 	GetSmVersion(sm_major, sm_minor, sm_patch);
-	PrintToServer("SM %d %d %d", sm_major, sm_minor, sm_patch);
 	
 	if(sm_minor < 11)
 	{
@@ -320,8 +320,12 @@ void ValidateServer(int client, bool listPlugins = false)
 	
 	if(listPlugins)
 	{
+		PrintToConsole(client, " ");
 		PrintToConsole(client, "Total Plugins: %d", totalPlugins);
-		PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
+		if(dupes > 0)
+		{
+			PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
+		}
 		PrintToConsole(client, " ");
 		PrintToConsole(client, "<----------------------------------------------------->");
 		
@@ -336,13 +340,17 @@ void ValidateServer(int client, bool listPlugins = false)
 	PrintToConsole(client, g_competition);
 	PrintToConsole(client, "Matched %d plugins out of %d required", pluginMatch, sizeof(g_compPlugins));
 	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
-	PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
-
+	if(dupes > 0)
+	{
+		PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
+	}
+	PrintToConsole(client, " ");
 	PrintToConsole(client, "<------------------------CVARS------------------------>");
 	PrintToConsole(client, " ");
 	bool cvarsMatched = ValidateServerCvars(client);
 	PrintToConsole(client, " ");
 	PrintToConsole(client, "<----------------- Validation Result ----------------->");
+	PrintToConsole(client, " ");
 	
 	if(pluginMatch == totalPlugins && cvarsMatched)
 	{
