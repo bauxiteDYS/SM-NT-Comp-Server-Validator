@@ -8,13 +8,13 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "5v5-20241203",
+	version = "5v5-20241205",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 bool g_validateCooldown;
 
-static char g_competition[] = "Tournament: Generic 5v5 2024-12-03";
+static char g_competition[] = "Tournament: Generic 5v5 2024-12-05";
 
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
@@ -56,23 +56,29 @@ static char g_cvarList[][][] = {
 	{"sm_nt_wincond_consolation_rounds", "0"},
 	{"sm_nt_wincond_survivor_bonus", "1"},
 	{"sm_nt_wincond_ghost_reward", "0"},
+	{"sm_nt_wincond_ghost_reward_dead", "0"},
 	{"sm_nt_ghost_bias_enabled", "1"},
 	{"sm_nt_ghost_bias_rounds", "2"},
 	{"sm_nt_anti_ghosthop_verbosity", "2"},
 	{"sm_nt_anti_ghosthop_speed_scale", "1.0"},
 	{"sm_nt_anti_ghosthop_n_extra_hops", "0"},
 	{"sm_loadout_rescue_allow_loadout_change", "0"},
+	{"sm_nt_assist_enabled", "1"},
+	{"sm_nt_assist_damage", "50"},
+	{"sm_nt_assist_half", "0"},
+	{"sm_nt_assist_notifications", "1"},
+	{"sm_ntdamage_assists", "0"},
 };
 
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 
 static char g_compPlugins[][] = {
-	"Comp Server Validator:5v5-20241203",
+	"Comp Server Validator:5v5-20241205",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
-	"NT Win Condition:0.0.9",
+	"NT Win Condition:0.0.10",
 	"NT Anti Ghosthop:3.0.0",
 	"NT Enforce Comp Values:0.2.0",
 	"NT Dead Chat Comp:0.1.1",
@@ -196,7 +202,7 @@ void ValidateServer(int client, bool listPlugins = false)
 	
 	GetSmVersion(sm_major, sm_minor, sm_patch);
 	
-	if(sm_minor < 11)
+	if(sm_major != 1 && sm_minor < 11)
 	{
 		char msg[] = "Sourcemod version less than 1.11 is not supported for comp";
 		ReplyToCommand(client, msg);
@@ -456,9 +462,9 @@ stock bool GetSmVersion(int& out_major, int& out_minor, int& out_patch)
 			return false;
 		}
 
-		char versions[3][2];
+		char versions[3][3];
 		if (sizeof(versions) != ExplodeString(version, ".", versions,
-			sizeof(versions), sizeof(versions[])+1)) {
+			sizeof(versions), sizeof(versions[]))) {
 			delete re;
 			return false;
 		}
