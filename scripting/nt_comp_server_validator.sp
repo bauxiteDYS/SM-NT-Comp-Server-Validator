@@ -13,9 +13,7 @@ public Plugin myinfo = {
 };
 
 bool g_validateCooldown;
-
 static char g_competition[] = "Tournament: Generic 5v5 2024-12-05";
-
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
 	{"sm_competitive_round_limit", "15"},
@@ -72,7 +70,6 @@ static char g_cvarList[][][] = {
 
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
-
 static char g_compPlugins[][] = {
 	"Comp Server Validator:5v5-20241205",
 	"Websocket:1.2",
@@ -106,7 +103,6 @@ static char g_compPlugins[][] = {
 };
 
 //firstly the sourcemod plugins and then some commonly used plugins
-
 static char g_defaultPlugins[][] = {
 	"Admin File Reader",
 	"Admin Help",
