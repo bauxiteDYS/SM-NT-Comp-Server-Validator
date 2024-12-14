@@ -8,12 +8,12 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "5v5-20241205",
+	version = "5v5-20241213",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 bool g_validateCooldown;
-static char g_competition[] = "Tournament: Generic 5v5 2024-12-05";
+static char g_competition[] = "Tournament: Generic 5v5 2024-12-13";
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
 	{"sm_competitive_round_limit", "15"},
@@ -71,7 +71,7 @@ static char g_cvarList[][][] = {
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"Comp Server Validator:5v5-20241205",
+	"Comp Server Validator:5v5-20241213",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
@@ -142,6 +142,7 @@ static char g_defaultPlugins[][] = {
 	"Flip a Coin",
 	"Flip a Coin / mini-game",
 	"Empty Server map reloader",
+	"Server restart and Map reloader",
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
@@ -154,17 +155,22 @@ public void OnPluginStart()
 	RegAdminCmd("sm_listplugins", Cmd_ListPlugins, ADMFLAG_GENERIC);
 }
 
+public void OnMapStart()
+{
+	g_validateCooldown = false;
+}
+
 public Action Cmd_ListPlugins(int client, int args)
 {
 	if (g_validateCooldown)
 	{
-		ReplyToCommand(client, "List Plugins is on cooldown, wait 7s");
+		ReplyToCommand(client, "List Plugins is on cooldown, wait 5s");
 		return Plugin_Stop;
 	}
 	
 	ValidateServer(client, true);
 	g_validateCooldown = true;
-	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(5.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	return Plugin_Handled;
 }
@@ -173,13 +179,13 @@ public Action Cmd_Validate(int client, int args)
 {
 	if (g_validateCooldown)
 	{
-		ReplyToCommand(client, "Validate is on cooldown, wait 7s");
+		ReplyToCommand(client, "Validate is on cooldown, wait 5s");
 		return Plugin_Stop;
 	}
 	
 	ValidateServer(client);
 	g_validateCooldown = true;
-	CreateTimer(7.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(5.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
 	return Plugin_Handled;
 }
@@ -198,7 +204,7 @@ void ValidateServer(int client, bool listPlugins = false)
 	
 	GetSmVersion(sm_major, sm_minor, sm_patch);
 	
-	if(sm_major != 1 && sm_minor < 11)
+	if(sm_major != 1 || sm_minor < 11)
 	{
 		char msg[] = "Sourcemod version less than 1.11 is not supported for comp";
 		ReplyToCommand(client, msg);
@@ -409,7 +415,7 @@ void ValidateServer(int client, bool listPlugins = false)
 	
 }
 
-bool ValidateServerCvars(int client)
+bool ValidateServerCvars(int client) //could there be a bug here with the cvars that are integers and comparing them as float?
 {
 	bool cvarsMatched = true;
 	
@@ -427,11 +433,13 @@ bool ValidateServerCvars(int client)
 		
 		cvar.GetString(buff, sizeof(buff));
 		
-		if(!StrEqual(buff, g_cvarList[i][1], false))
+		int flCompare = FloatCompare(StringToFloat(buff), StringToFloat(g_cvarList[i][1]));
+		
+		if(flCompare != 0)
 		{
 			cvarsMatched = false;
 			PrintToConsole(client, "%s - Incorrect value", g_cvarList[i][0]);
-			PrintToConsole(client, "- Current value: %s - Required value: %s", buff, g_cvarList[i][1]);
+			PrintToConsole(client, "  Current value: %s - Required value: %s", buff, g_cvarList[i][1]);
 		}
 	}
 	
@@ -440,6 +448,7 @@ bool ValidateServerCvars(int client)
 
 // Passes the SemVer of the running SourceMod installation by reference.
 // Returns false on failure, and true on success.
+
 stock bool GetSmVersion(int& out_major, int& out_minor, int& out_patch)
 {
 	static int major = -1, minor, patch;
