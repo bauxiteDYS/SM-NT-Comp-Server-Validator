@@ -8,19 +8,19 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "5v5-20241213",
+	version = "WW25-v1",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 bool g_validateCooldown;
-static char g_competition[] = "Tournament: Generic 5v5 2024-12-13";
+static char g_competition[] = "Tournament: WW25";
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
 	{"sm_competitive_round_limit", "15"},
 	{"sm_competitive_nozanshi", "0"},
 	{"sm_competitive_sudden_death", "1"},
-	{"sm_competitive_ghost_overtime", "45"},
-	{"sm_competitive_ghost_overtime_grace", "15"},
+	{"sm_competitive_ghost_overtime", "30"},
+	{"sm_competitive_ghost_overtime_grace", "10"},
 	{"sm_competitive_ghost_overtime_decay_exp", "0"},
 	{"sv_minupdaterate", "66"},
 	{"sv_mincmdrate", "66"},
@@ -71,7 +71,7 @@ static char g_cvarList[][][] = {
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"Comp Server Validator:5v5-20241213",
+	"Comp Server Validator:WW25-v1",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
@@ -85,6 +85,8 @@ static char g_compPlugins[][] = {
 	"NT Physics Unstuck:0.6.4",
 	"NT Water Nades:0.1.1",
 	"NT Comp Warmup God Mode:0.1.1",
+	"NT Cap Mover:0.0.3",
+	"NT weapon drop fixes:0.3.0",
 	"Neotokyo Competitive Plugin:3.0.2",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
@@ -146,7 +148,6 @@ static char g_defaultPlugins[][] = {
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
-	"No Block",
 };
 
 public void OnPluginStart()
