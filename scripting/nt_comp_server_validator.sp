@@ -8,7 +8,7 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v1",
+	version = "WW25-v2",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -66,12 +66,13 @@ static char g_cvarList[][][] = {
 	{"sm_nt_assist_half", "0"},
 	{"sm_nt_assist_notifications", "1"},
 	{"sm_ntdamage_assists", "0"},
+	{"sm_nt_capmover_enable", "1"},
 };
 
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"Comp Server Validator:WW25-v1",
+	"Comp Server Validator:WW25-v2",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
