@@ -8,7 +8,7 @@ public Plugin myinfo = {
 	name = "Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v2",
+	version = "WW25-v3",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -72,7 +72,7 @@ static char g_cvarList[][][] = {
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"Comp Server Validator:WW25-v2",
+	"Comp Server Validator:WW25-v3",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
@@ -103,6 +103,14 @@ static char g_compPlugins[][] = {
 	"NEOTOKYO° Unlimited squad size:1.3",
 	"NEOTOKYO° Input tweaks:0.2.1",
 	"Neotokyo WebSocket:1.6.2",
+	"NT Competitive Vetos:1.3.1",
+	"NT Competitive Clantag Updater:1.0.0",
+	"NT Observer PVS Bypass:0.1.0",
+	"NT Spectator Quick Target:1.0.1",
+	"NEOTOKYO° Vision modes for spectators:0.12",
+	"NT Team join chat commands:2.0.1",
+	"NT Chat Prefixed:1.0.0",
+	"Automatic hud_reloadscheme:1.3.1",
 };
 
 //firstly the sourcemod plugins and then some commonly used plugins
@@ -133,15 +141,6 @@ static char g_defaultPlugins[][] = {
 	"SQL Admins (Threaded)",
 	"Simple Adverts",
 	"Advertisements",
-	"NT Observer PVS Bypass",
-	"NT Spectator Quick Target",
-	"NEOTOKYO° Player count events",
-	"NEOTOKYO° Vision modes for spectators",
-	"NT Competitive Vetos",
-	"NT Competitive Clantag Updater",
-	"Automatic hud_reloadscheme",
-	"NT Team join chat commands",
-	"NT Chat Prefixed",
 	"Flip a Coin",
 	"Flip a Coin / mini-game",
 	"Empty Server map reloader",
@@ -149,6 +148,8 @@ static char g_defaultPlugins[][] = {
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
+	"NEOTOKYO° Player count events",
+	"NT MapChooser",
 };
 
 public void OnPluginStart()
