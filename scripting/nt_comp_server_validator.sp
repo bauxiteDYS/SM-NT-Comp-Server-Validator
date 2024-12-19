@@ -10,10 +10,10 @@
 #define PRNT_ALL 7
 
 public Plugin myinfo = {
-	name = "Comp Server Validator",
+	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v5",
+	version = "WW25-v6",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -27,8 +27,8 @@ static char g_cvarList[][][] = {
 	{"sm_competitive_round_limit", "15"},
 	{"sm_competitive_nozanshi", "0"},
 	{"sm_competitive_sudden_death", "1"},
-	{"sm_competitive_ghost_overtime", "30"},
-	{"sm_competitive_ghost_overtime_grace", "10"},
+	{"sm_competitive_ghost_overtime", "45"},
+	{"sm_competitive_ghost_overtime_grace", "15"},
 	{"sm_competitive_ghost_overtime_decay_exp", "0"},
 	{"sv_minupdaterate", "66"},
 	{"sv_mincmdrate", "66"},
@@ -80,7 +80,7 @@ static char g_cvarList[][][] = {
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"Comp Server Validator:WW25-v5",
+	"NT Comp Server Validator:WW25-v6",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
@@ -89,7 +89,7 @@ static char g_compPlugins[][] = {
 	"NT Enforce Comp Values:0.2.0",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
-	"NT Killer Info:0.2.7",
+	"NT Killer Info:0.3.0",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
 	"NT Water Nades:0.1.1",
@@ -243,9 +243,6 @@ void ValidateServer(bool listPlugins = false)
 	}
 	
 	char g_serverPlugins[128][128];
-	char pluginName[128];
-	char pluginVersion[64];
-	char pluginCompare[192];
 	char msg[128];
 	int dupes;
 	int pluginMatch;
@@ -253,7 +250,7 @@ void ValidateServer(bool listPlugins = false)
 	int unique;
 	bool g_matchedPluginsList[128];
 	bool missingPlugins;
-	Handle PluginIter = GetPluginIterator();
+	//Handle PluginIter = GetPluginIterator();
 	
 	if(!listPlugins)
 	{
@@ -267,10 +264,19 @@ void ValidateServer(bool listPlugins = false)
 	}
 	
 	//
-	while (MorePlugins(PluginIter))
+	for(int pluginNum = 1; pluginNum <= 128; pluginNum++)
 	{
-		Handle CurrentPlugin = ReadPlugin(PluginIter);
+		Handle CurrentPlugin = FindPluginByNumber(pluginNum);
 		
+		if(!IsValidHandle(CurrentPlugin) || CurrentPlugin == INVALID_HANDLE)
+		{
+			continue;
+		}
+		
+		char pluginName[128];
+		char pluginVersion[64];
+		char pluginCompare[192];
+	
 		bool defaultPlugin;
 		bool unNamed;
 		bool matched;
@@ -286,6 +292,7 @@ void ValidateServer(bool listPlugins = false)
 		{
 			if(StrEqual(g_serverPlugins[i], pluginName, true))
 			{
+				++totalPlugins;
 				dupes++;
 				dupe = true;
 			}
@@ -327,7 +334,6 @@ void ValidateServer(bool listPlugins = false)
 		
 		++totalPlugins;
 		
-		pluginVersion[0] = '\0';
 		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
 		
 		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
@@ -369,7 +375,7 @@ void ValidateServer(bool listPlugins = false)
 		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 		
 		listPlugins = false;
-		delete PluginIter;
+		//delete PluginIter;
 		return;
 	}
 		
@@ -450,7 +456,7 @@ void ValidateServer(bool listPlugins = false)
 		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 	}
 	
-	delete PluginIter;
+	//delete PluginIter;
 	g_validatedOnce = true;
 }
 
@@ -478,6 +484,11 @@ bool ValidateServerCvars() //could there be a bug here with the cvars that are i
 			PrintToConsoleAll("%s - Incorrect value", g_cvarList[i][0]);
 			PrintToConsoleAll("  Current value: %s - Required value: %s", buff, g_cvarList[i][1]);
 		}
+	}
+	
+	if(cvarsMatched)
+	{
+		PrintToConsoleAll("All CVARS matched");
 	}
 	
 	return cvarsMatched;
