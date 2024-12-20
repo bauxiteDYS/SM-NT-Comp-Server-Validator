@@ -13,7 +13,7 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v6",
+	version = "WW25-v7",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -80,7 +80,7 @@ static char g_cvarList[][][] = {
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:WW25-v6",
+	"NT Comp Server Validator:WW25-v7",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
@@ -119,10 +119,21 @@ static char g_compPlugins[][] = {
 	"NT Team join chat commands:2.0.1",
 	"NT Chat Prefixed:1.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
+	"NT admin score adjuster:0.1.0",
+	"NT Comp XP Printer:0.1.0",
 };
 
-//firstly the sourcemod plugins and then some commonly used plugins
+//plugins we require without any particular version (Default SM plugins etc)
 static char g_defaultPlugins[][] = {
+	"Client Preferences",
+	"NT MapChooser",
+	"Nextmap",
+	"Map Nominations",
+	"Rock The Vote",
+};
+
+//plugins we dont really care if they are on the server or not
+static char g_otherPlugins[][] = {
 	"Admin File Reader",
 	"Admin Help",
 	"Admin Menu",
@@ -133,15 +144,10 @@ static char g_defaultPlugins[][] = {
 	"Basic Commands",
 	"Basic Info Triggers",
 	"Basic Votes",
-	"Client Preferences",
 	"Fun Commands",
 	"Fun Votes",
-	"MapChooser",
-	"Nextmap",
-	"Map Nominations",
 	"Player Commands",
 	"Reserved Slots",
-	"Rock The Vote",
 	"Sound Commands",
 	"RandomCycle",
 	"SQL Admin Manager",
@@ -156,8 +162,6 @@ static char g_defaultPlugins[][] = {
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
-	"NEOTOKYO° Player count events",
-	"NT MapChooser",
 };
 
 public void OnPluginStart()
@@ -242,15 +246,15 @@ void ValidateServer(bool listPlugins = false)
 		return;
 	}
 	
-	char g_serverPlugins[128][128];
+	char allServerPlugins[128][128];
 	char msg[128];
 	int dupes;
 	int pluginMatch;
 	int totalPlugins;
 	int unique;
-	bool g_matchedPluginsList[128];
+	bool matchedDefaultList[128];
+	bool matchedCompList[128];
 	bool missingPlugins;
-	//Handle PluginIter = GetPluginIterator();
 	
 	if(!listPlugins)
 	{
@@ -263,7 +267,6 @@ void ValidateServer(bool listPlugins = false)
 		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	}
 	
-	//
 	for(int pluginNum = 1; pluginNum <= 128; pluginNum++)
 	{
 		Handle CurrentPlugin = FindPluginByNumber(pluginNum);
@@ -277,7 +280,7 @@ void ValidateServer(bool listPlugins = false)
 		char pluginVersion[64];
 		char pluginCompare[192];
 	
-		bool defaultPlugin;
+		bool otherPlugin;
 		bool unNamed;
 		bool matched;
 		bool dupe;
@@ -288,9 +291,9 @@ void ValidateServer(bool listPlugins = false)
 			unNamed = true;
 		}
 		
-		for(int i = 0; i < sizeof(g_serverPlugins); i++)
+		for(int i = 0; i < sizeof(allServerPlugins); i++)
 		{
-			if(StrEqual(g_serverPlugins[i], pluginName, true))
+			if(StrEqual(allServerPlugins[i], pluginName, true))
 			{
 				++totalPlugins;
 				dupes++;
@@ -306,7 +309,7 @@ void ValidateServer(bool listPlugins = false)
 		
 		++unique;
 		
-		strcopy(g_serverPlugins[unique - 1], sizeof(pluginName), pluginName);
+		strcopy(allServerPlugins[unique - 1], sizeof(pluginName), pluginName);
 		
 		if(unNamed)
 		{
@@ -317,17 +320,16 @@ void ValidateServer(bool listPlugins = false)
 		
 		if(!listPlugins)
 		{
-			for(int i = 0; i < sizeof(g_defaultPlugins); i++)
+			for(int i = 0; i < sizeof(g_otherPlugins); i++)
 			{
-				if(StrEqual(g_defaultPlugins[i], pluginName, true))
+				if(StrEqual(g_otherPlugins[i], pluginName, true))
 				{
-					defaultPlugin = true;
+					otherPlugin = true;
 				}
 			}
 			
-			if(defaultPlugin)
+			if(otherPlugin)
 			{
-				//PrintToServer("default plugin, ignoring: %s", pluginName);
 				continue;
 			}
 		}
@@ -340,11 +342,21 @@ void ValidateServer(bool listPlugins = false)
 		
 		if(!listPlugins)
 		{
+			for(int i = 0; i < sizeof(g_defaultPlugins); i++)
+			{
+				if(StrEqual(g_defaultPlugins[i], pluginName, true))
+				{
+					matchedDefaultList[i] = true;
+					matched = true;
+					++pluginMatch;
+				}
+			}
+			
 			for(int i = 0; i < sizeof(g_compPlugins); i++)
 			{
 				if(StrEqual(g_compPlugins[i], pluginCompare, true))
 				{
-					g_matchedPluginsList[i] = true;
+					matchedCompList[i] = true;
 					matched = true;
 					++pluginMatch;
 				}
@@ -361,7 +373,6 @@ void ValidateServer(bool listPlugins = false)
 			PrintMsg("%s", PRNT_CNSL | PRNT_SRVR, pluginCompare);
 		}
 	}
-	//
 	
 	if(listPlugins)
 	{
@@ -375,7 +386,6 @@ void ValidateServer(bool listPlugins = false)
 		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 		
 		listPlugins = false;
-		//delete PluginIter;
 		return;
 	}
 		
@@ -383,7 +393,7 @@ void ValidateServer(bool listPlugins = false)
 	PrintMsg("<------------------ Plugins Result ------------------->", PRNT_CNSL | PRNT_SRVR);
 	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	PrintMsg(g_competition, PRNT_CNSL | PRNT_SRVR);
-	PrintMsg("Matched %d plugins out of %d required", PRNT_CNSL | PRNT_SRVR, pluginMatch, sizeof(g_compPlugins));
+	PrintMsg("Matched %d plugins out of %d required", PRNT_CNSL | PRNT_SRVR, pluginMatch, sizeof(g_compPlugins) + sizeof(g_defaultPlugins));
 	PrintMsg("Total (non-default) plugins on server: %d", PRNT_CNSL | PRNT_SRVR, totalPlugins);
 	if(dupes > 0)
 	{
@@ -402,22 +412,22 @@ void ValidateServer(bool listPlugins = false)
 		g_validationResult = false;
 		strcopy(msg, sizeof(msg), "[Server Validator] Server is NOT suitable for this comp, it has duplicate plugins, remove them and try again");
 	}
-	else if(pluginMatch == totalPlugins && cvarsMatched)
+	else if(totalPlugins == pluginMatch && pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)) && cvarsMatched)
 	{
 		g_validationResult = true;
 		strcopy(msg, sizeof(msg), "[Server Validator] Server validated : it has only approved plugins with the correct version and correct settings");
 	}
-	else if(pluginMatch == totalPlugins && !cvarsMatched)
+	else if(totalPlugins == pluginMatch && pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)) && !cvarsMatched)
 	{
 		g_validationResult = false;
 		strcopy(msg, sizeof(msg), "[Server Validator] Need admin approval : it has only approved plugins with the correct version, settings need admin approval");
 	}
-	else if(pluginMatch == sizeof(g_compPlugins) && totalPlugins >= pluginMatch)
+	else if(pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)) && totalPlugins >= pluginMatch)
 	{
 		g_validationResult = false;
 		strcopy(msg, sizeof(msg), "[Server Validator] Need admin approval : It has all required comp plugins, but also additional unknown plugins");
 	}
-	else if(pluginMatch < sizeof(g_compPlugins))
+	else if(pluginMatch < (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)))
 	{
 		g_validationResult = false;
 		missingPlugins = true;
@@ -443,24 +453,33 @@ void ValidateServer(bool listPlugins = false)
 		PrintMsg("<------- Required plugins that are not present ------->", PRNT_CNSL | PRNT_SRVR);
 		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 		
+		for(int i = 0; i < sizeof(g_defaultPlugins); i++)
+		{
+			if(!matchedDefaultList[i])
+			{
+				PrintMsg("%s", PRNT_CNSL | PRNT_SRVR, g_defaultPlugins[i]);
+			}
+		
+			matchedDefaultList[i] = false;
+		}
+		
 		for(int i = 0; i < sizeof(g_compPlugins); i++)
 		{
-			if(!g_matchedPluginsList[i])
+			if(!matchedCompList[i])
 			{
 				PrintMsg("%s", PRNT_CNSL | PRNT_SRVR, g_compPlugins[i]);
 			}
 		
-			g_matchedPluginsList[i] = false;
+			matchedCompList[i] = false;
 		}
 		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 	}
 	
-	//delete PluginIter;
 	g_validatedOnce = true;
 }
 
-bool ValidateServerCvars() //could there be a bug here with the cvars that are integers and comparing them as float?
+bool ValidateServerCvars()
 {
 	bool cvarsMatched = true;
 	
