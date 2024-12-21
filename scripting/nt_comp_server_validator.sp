@@ -26,9 +26,9 @@ char g_requiredFiles[][] = {
 	"/addons/sourcemod/gamedata/neotokyo/loadout_rescue.txt",
 	"/addons/sourcemod/gamedata/neotokyo/physics_unstuck.txt",
 	"/addons/sourcemod/gamedata/neotokyo/wincond.txt",
+	"/addons/sourcemod/configs/veto_maplist.ini",
+	"/addons/sourcemod/configs/clantags.cfg",
 	"/addons/sourcemod/configs/nt-capmover/nt_saitama_redux_ctg_a5.capzones.txt",
-	"/addons/sourcemod/configs/nt-capmover/veto_maplist.ini",
-	"/addons/sourcemod/configs/nt-capmover/clantags.cfg",
 };
 
 static char g_competition[] = "Tournament: WW25";
