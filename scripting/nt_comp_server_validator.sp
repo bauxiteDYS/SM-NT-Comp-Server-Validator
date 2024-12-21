@@ -13,13 +13,23 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v7f",
+	version = "WW25-v9",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 bool g_validateCooldown;
 bool g_validationResult;
 bool g_validatedOnce;
+
+char g_requiredFiles[][] = {
+	"/addons/sourcemod/gamedata/neotokyo/chatprefix.txt",
+	"/addons/sourcemod/gamedata/neotokyo/loadout_rescue.txt",
+	"/addons/sourcemod/gamedata/neotokyo/physics_unstuck.txt",
+	"/addons/sourcemod/gamedata/neotokyo/wincond.txt",
+	"/addons/sourcemod/configs/nt-capmover/nt_saitama_redux_ctg_a5.capzones.txt",
+	"/addons/sourcemod/configs/nt-capmover/veto_maplist.ini",
+	"/addons/sourcemod/configs/nt-capmover/clantags.cfg",
+};
 
 static char g_competition[] = "Tournament: WW25";
 static char g_cvarList[][][] = {
@@ -80,7 +90,7 @@ static char g_cvarList[][][] = {
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:WW25-v7f",
+	"NT Comp Server Validator:WW25-v9",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
@@ -402,35 +412,58 @@ void ValidateServer(bool listPlugins = false)
 	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	PrintMsg("<------------------------CVARS------------------------>", PRNT_CNSL | PRNT_SRVR);
 	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	
 	bool cvarsMatched = ValidateServerCvars();
+	
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	
+	
+	PrintMsg("<------------------------Files------------------------>", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	
+	bool allFilesExist = DoFilesExist();
+	
 	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	PrintMsg("<----------------- Validation Result ----------------->", PRNT_CNSL | PRNT_SRVR);
 	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	
-	if(dupes > 0)
+	if(pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)))
+	{
+		missingPlugins = false;
+	}
+	else
+	{
+		missingPlugins = true;
+	}
+	
+	if(!allFilesExist)
+	{
+		g_validationResult = false;
+		strcopy(msg, sizeof(msg), "[Server Validator] Server is NOT suitable for this comp, files are missing");
+	}
+	else if(dupes > 0)
 	{
 		g_validationResult = false;
 		strcopy(msg, sizeof(msg), "[Server Validator] Server is NOT suitable for this comp, it has duplicate plugins, remove them and try again");
 	}
-	else if(totalPlugins == pluginMatch && pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)) && cvarsMatched)
+	else if(totalPlugins == pluginMatch && !missingPlugins && cvarsMatched)
 	{
 		g_validationResult = true;
 		strcopy(msg, sizeof(msg), "[Server Validator] Server validated : it has only approved plugins with the correct version and correct settings");
 	}
-	else if(totalPlugins == pluginMatch && pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)) && !cvarsMatched)
+	else if(totalPlugins == pluginMatch && !missingPlugins && !cvarsMatched)
 	{
 		g_validationResult = false;
 		strcopy(msg, sizeof(msg), "[Server Validator] Need admin approval : it has only approved plugins with the correct version, settings need admin approval");
 	}
-	else if(pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)) && totalPlugins >= pluginMatch)
+	else if(!missingPlugins && totalPlugins >= pluginMatch)
 	{
 		g_validationResult = false;
 		strcopy(msg, sizeof(msg), "[Server Validator] Need admin approval : It has all required comp plugins, but also additional unknown plugins");
 	}
-	else if(pluginMatch < (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)))
+	else if(missingPlugins)
 	{
 		g_validationResult = false;
-		missingPlugins = true;
 		strcopy(msg, sizeof(msg), "[Server Validator] Server is NOT suitable for this comp as required plugins are missing, or not the correct versions");
 	}
 	else
@@ -443,7 +476,7 @@ void ValidateServer(bool listPlugins = false)
 	
 	if(!missingPlugins)
 	{
-		PrintMsg("There are no missing plugins!", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg("[Server Validator] There are no missing plugins!", PRNT_CNSL | PRNT_SRVR);
 		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 	}
@@ -479,6 +512,27 @@ void ValidateServer(bool listPlugins = false)
 	g_validatedOnce = true;
 }
 
+bool DoFilesExist()
+{
+	bool filesMatched = true;
+	
+	for(int iFiles = 0; iFiles < sizeof(g_requiredFiles); iFiles++)
+	{
+		if(!FileExists(g_requiredFiles[iFiles]))
+		{
+			PrintMsg("%s - Not found", PRNT_CNSL | PRNT_SRVR, g_requiredFiles[iFiles]);
+			filesMatched = false;
+		}
+	}
+	
+	if(filesMatched)
+	{
+		PrintMsg("All files are present", PRNT_CNSL | PRNT_SRVR);
+	}
+	
+	return filesMatched;
+}
+
 bool ValidateServerCvars()
 {
 	bool cvarsMatched = true;
@@ -491,7 +545,7 @@ bool ValidateServerCvars()
 		if(!IsValidHandle(cvar))
 		{
 			cvarsMatched = false;
-			PrintToConsoleAll("%s - Not found", g_cvarList[i][0]);
+			PrintMsg("%s - Not found", PRNT_CNSL | PRNT_SRVR, g_cvarList[i][0]);
 			continue;
 		}
 		
@@ -500,14 +554,14 @@ bool ValidateServerCvars()
 		if(StringToFloat(buff) != StringToFloat(g_cvarList[i][1]))
 		{
 			cvarsMatched = false;
-			PrintToConsoleAll("%s - Incorrect value", g_cvarList[i][0]);
-			PrintToConsoleAll("  Current value: %s - Required value: %s", buff, g_cvarList[i][1]);
+			PrintMsg("%s - Incorrect value", PRNT_CNSL | PRNT_SRVR, g_cvarList[i][0]);
+			PrintMsg("  Current value: %s - Required value: %s", PRNT_CNSL | PRNT_SRVR, buff, g_cvarList[i][1]);
 		}
 	}
 	
 	if(cvarsMatched)
 	{
-		PrintToConsoleAll("All CVARS matched");
+		PrintMsg("All CVARS matched", PRNT_CNSL | PRNT_SRVR);
 	}
 	
 	return cvarsMatched;
