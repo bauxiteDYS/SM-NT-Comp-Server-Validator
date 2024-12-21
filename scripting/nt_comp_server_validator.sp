@@ -13,7 +13,7 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v7",
+	version = "WW25-v7f",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -80,7 +80,7 @@ static char g_cvarList[][][] = {
 // These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
 // Have been tested extensively and appear to have no major bugs, and few features and fixes missing
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:WW25-v7",
+	"NT Comp Server Validator:WW25-v7f",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
@@ -180,12 +180,12 @@ public Action OnReady(int client, const char[] command, int argc)
 			PrintToChat(client, "[Server Validator] Warning! This server is NOT validated for %s, details should be in console somewhere", g_competition);
 		}
 			
-		return Plugin_Handled;
+		return Plugin_Continue;
 	}
 	
 	ValidateServer();
 	PrintToChat(client, "[Server Validator] Check console for validation result (visible to all)");
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public void OnMapStart()
