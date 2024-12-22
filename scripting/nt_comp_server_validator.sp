@@ -13,7 +13,7 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v9",
+	version = "WW25-v10",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -21,7 +21,8 @@ bool g_validateCooldown;
 bool g_validationResult;
 bool g_validatedOnce;
 
-char g_requiredFiles[][] = {
+// need more files? Check for maps using built-in sm functions?
+static char g_requiredFiles[][] = {
 	"/addons/sourcemod/gamedata/neotokyo/chatprefix.txt",
 	"/addons/sourcemod/gamedata/neotokyo/loadout_rescue.txt",
 	"/addons/sourcemod/gamedata/neotokyo/physics_unstuck.txt",
@@ -31,7 +32,9 @@ char g_requiredFiles[][] = {
 	"/addons/sourcemod/configs/nt-capmover/nt_saitama_redux_ctg_a5.capzones.txt",
 };
 
-static char g_competition[] = "Tournament: WW25";
+static char g_competition[] = "Tournament: WW25 (v10)";
+
+// need more cvars?
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
 	{"sm_competitive_round_limit", "15"},
@@ -85,12 +88,16 @@ static char g_cvarList[][][] = {
 	{"sm_nt_assist_notifications", "1"},
 	{"sm_ntdamage_assists", "0"},
 	{"sm_nt_capmover_enable", "1"},
+	{"mp_timelimit", "0"},
+	{"sv_alltalk", "0"},
+	{"tv_enable", "1"},
+	{"tv_maxclients", "0"},
+	{"tv_transmitall", "1"},
 };
 
-// These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
-// Have been tested extensively and appear to have no major bugs, and few features and fixes missing
+// Plugins we need for ww25
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:WW25-v9",
+	"NT Comp Server Validator:WW25-v10",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
