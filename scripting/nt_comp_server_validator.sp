@@ -13,7 +13,7 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v10",
+	version = "WW25-v11",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -30,9 +30,10 @@ static char g_requiredFiles[][] = {
 	"/addons/sourcemod/configs/veto_maplist.ini",
 	"/addons/sourcemod/configs/clantags.cfg",
 	"/addons/sourcemod/configs/nt-capmover/nt_saitama_redux_ctg_a5.capzones.txt",
+	"/addons/sourcemod/translations/nt_anti_ghosthop.phrases.txt",
 };
 
-static char g_competition[] = "Tournament: WW25 (v10)";
+static char g_competition[] = "Tournament: WW25 (v11)";
 
 // need more cvars?
 static char g_cvarList[][][] = {
@@ -46,6 +47,9 @@ static char g_cvarList[][][] = {
 	{"sv_minupdaterate", "66"},
 	{"sv_mincmdrate", "66"},
 	{"sv_minrate", "192000"},
+	{"sv_maxupdaterate", "66"},
+	{"sv_maxcmdrate", "66"},
+	{"sv_maxrate", "576000"},
 	{"sv_cheats", "0"},
 	{"sv_gravity", "800"},
 	{"neo_round_timelimit", "2.26"},
@@ -78,9 +82,8 @@ static char g_cvarList[][][] = {
 	{"sm_nt_wincond_ghost_reward_dead", "0"},
 	{"sm_nt_ghost_bias_enabled", "1"},
 	{"sm_nt_ghost_bias_rounds", "2"},
-	{"sm_nt_anti_ghosthop_verbosity", "2"},
-	{"sm_nt_anti_ghosthop_speed_scale", "1.0"},
-	{"sm_nt_anti_ghosthop_n_extra_hops", "0"},
+	{"sm_nt_anti_ghosthop_verbosity", "1"},
+	{"sm_nt_anti_ghosthop_ratio", "1.0"},
 	{"sm_loadout_rescue_allow_loadout_change", "0"},
 	{"sm_nt_assist_enabled", "1"},
 	{"sm_nt_assist_damage", "50"},
@@ -97,12 +100,12 @@ static char g_cvarList[][][] = {
 
 // Plugins we need for ww25
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:WW25-v10",
+	"NT Comp Server Validator:WW25-v11",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Stuck Rescue:0.1.0",
 	"NT Win Condition:0.0.10",
-	"NT Anti Ghosthop:3.0.0",
+	"NT Anti Ghosthop:4.1.2",
 	"NT Enforce Comp Values:0.2.0",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
