@@ -13,7 +13,7 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v11",
+	version = "WW25-v12",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -33,17 +33,33 @@ static char g_requiredFiles[][] = {
 	"/addons/sourcemod/translations/nt_anti_ghosthop.phrases.txt",
 };
 
-static char g_competition[] = "Tournament: WW25 (v11)";
+static char g_competition[] = "Tournament: WW25 (v12)";
 
 // need more cvars?
+// only works for cvars that are numbers!!!
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
 	{"sm_competitive_round_limit", "15"},
-	{"sm_competitive_nozanshi", "0"},
+	{"sm_competitive_players_total", "10"},
+	{"sm_competitive_max_timeouts", "2"},
+	{"sm_competitive_max_pause_length", "60"},
+	{"sm_competitive_max_pause_length_technical", "300"},
+	{"sm_competitive_sourcetv_enabled", "1"},
+	{"sm_competitive_comms_behaviour", "0"},
+	{"sm_competitive_log_mode", "1"},
+	{"sm_competitive_killverbosity", "1"},
+	{"sm_competitive_killverbosity_delay", "0"},
+	{"sm_competitive_record_clients", "1"},
+	{"sm_competitive_pause_mode", "2"},
+	{"sm_competitive_readymode_collective", "0"},
+	{"sm_competitive_nozanshi", "0"}, // this is controlled by nt_wincond now, but we set to 0 in comp plugin
 	{"sm_competitive_sudden_death", "1"},
+	{"sm_competitive_display_remaining_players_centered", "1"},
+	{"sm_competitive_display_remaining_players_target", "3"},
 	{"sm_competitive_ghost_overtime", "45"},
 	{"sm_competitive_ghost_overtime_grace", "15"},
 	{"sm_competitive_ghost_overtime_decay_exp", "0"},
+	{"sm_competitive_ghost_overtime_grace_reset", "1"},
 	{"sv_minupdaterate", "66"},
 	{"sv_mincmdrate", "66"},
 	{"sv_minrate", "192000"},
@@ -58,6 +74,7 @@ static char g_cvarList[][][] = {
 	{"sm_nt_squadautojoin", "1"},
 	{"sm_nt_squadlock", "1"},
 	{"sm_nt_fov_max", "90"},
+	{"sv_suppress_viewpunch", "0"},
 	{"sv_accelerate", "10"},
 	{"sv_airaccelerate", "10"},
 	{"sv_footsteps", "1"},
@@ -96,20 +113,22 @@ static char g_cvarList[][][] = {
 	{"tv_enable", "1"},
 	{"tv_maxclients", "0"},
 	{"tv_transmitall", "1"},
+	{"sm_name_force", "1"},
 };
 
 // Plugins we need for ww25
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:WW25-v11",
+	"NT Comp Server Validator:WW25-v12",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
+	"NT Damage Accumulator fix:0.1.0",
 	"NT Stuck Rescue:0.1.0",
-	"NT Win Condition:0.0.10",
+	"NT Win Condition:0.0.13",
 	"NT Anti Ghosthop:4.1.2",
-	"NT Enforce Comp Values:0.2.0",
+	"NT Enforce Comp Values:0.2.1",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
-	"NT Killer Info:0.3.0",
+	"NT Killer Info:0.3.1",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
 	"NT Water Nades:0.1.1",
@@ -136,11 +155,12 @@ static char g_compPlugins[][] = {
 	"NT Observer PVS Bypass:0.1.0",
 	"NT Spectator Quick Target:1.0.1",
 	"NEOTOKYO° Vision modes for spectators:0.12",
-	"NT Team join chat commands:2.0.1",
+	"NT Team join chat commands, and admin force:3.0.0",
 	"NT Chat Prefixed:1.0.0",
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT admin score adjuster:0.1.0",
 	"NT Comp XP Printer:0.1.0",
+	"NT Name Manager:0.5.5",
 };
 
 //plugins we require without any particular version (Default SM plugins etc)
