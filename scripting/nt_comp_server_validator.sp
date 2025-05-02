@@ -97,6 +97,8 @@ static char g_cvarList[][][] = {
 	{"sm_nt_wincond_survivor_bonus", "1"},
 	{"sm_nt_wincond_ghost_reward", "0"},
 	{"sm_nt_wincond_ghost_reward_dead", "0"},
+	{"sm_nt_wincond_ghost_hold_reward", "1"},
+	{"sm_nt_wincond_round_end_logging", "1"},
 	{"sm_nt_ghost_bias_enabled", "1"},
 	{"sm_nt_ghost_bias_rounds", "2"},
 	{"sm_nt_anti_ghosthop_verbosity", "1"},
