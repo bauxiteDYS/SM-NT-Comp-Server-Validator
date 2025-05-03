@@ -141,7 +141,7 @@ static char g_defaultPlugins[][] = {
 	"NT Chat Prefixed",
 	"Flip a Coin",
 	"Flip a Coin / mini-game",
-	"Empty Server map reloader",
+	"Empty server map reloader",
 	"Server restart and Map reloader",
 	"NT Force to Spectator",
 	"Force to Spectator",
