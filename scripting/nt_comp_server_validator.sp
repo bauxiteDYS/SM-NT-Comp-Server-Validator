@@ -13,7 +13,7 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "SS24-v1",
+	version = "SS25-v1",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
@@ -33,7 +33,7 @@ static char g_requiredFiles[][] = {
 	"/addons/sourcemod/translations/nt_anti_ghosthop.phrases.txt",
 };
 
-static char g_competition[] = "Tournament: WW25 (v12)";
+static char g_competition[] = "Tournament: SS25 (v1)";
 
 // need more cvars?
 // only works for cvars that are numbers!!!
@@ -121,7 +121,7 @@ static char g_cvarList[][][] = {
 
 // Plugins we need for ww25
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:SS24-v1",
+	"NT Comp Server Validator:SS25-v1",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Damage Accumulator fix:0.1.0",
@@ -170,7 +170,7 @@ static char g_compPlugins[][] = {
 //plugins we require without any particular version (Default SM plugins etc)
 static char g_defaultPlugins[][] = {
 	"Client Preferences",
-	"NT MapChooser",
+	"NT MapChooser Comp",
 	"Nextmap",
 	"Map Nominations",
 	"Rock The Vote",
