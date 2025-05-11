@@ -4,27 +4,68 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+#define PRNT_SRVR (1<<0)
+#define PRNT_CNSL (1<<1)
+#define PRNT_CHT (1<<2)
+#define PRNT_ALL 7
+
 public Plugin myinfo = {
-	name = "Comp Server Validator",
+	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "5v5-20241213",
+	version = "SS24-v1",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
 
 bool g_validateCooldown;
-static char g_competition[] = "Tournament: Generic 5v5 2024-12-13";
+bool g_validationResult;
+bool g_validatedOnce;
+
+// need more files? Check for maps using built-in sm functions?
+static char g_requiredFiles[][] = {
+	"/addons/sourcemod/gamedata/neotokyo/chatprefix.txt",
+	"/addons/sourcemod/gamedata/neotokyo/loadout_rescue.txt",
+	"/addons/sourcemod/gamedata/neotokyo/physics_unstuck.txt",
+	"/addons/sourcemod/gamedata/neotokyo/wincond.txt",
+	"/addons/sourcemod/configs/veto_maplist.ini",
+	"/addons/sourcemod/configs/clantags.cfg",
+	"/addons/sourcemod/configs/nt-capmover/nt_saitama_redux_ctg_a5.capzones.txt",
+	"/addons/sourcemod/translations/nt_anti_ghosthop.phrases.txt",
+};
+
+static char g_competition[] = "Tournament: WW25 (v12)";
+
+// need more cvars?
+// only works for cvars that are numbers!!!
 static char g_cvarList[][][] = {
 	{"sm_competitive_round_style", "1"},
 	{"sm_competitive_round_limit", "15"},
-	{"sm_competitive_nozanshi", "0"},
+	{"sm_competitive_players_total", "10"},
+	{"sm_competitive_max_timeouts", "2"},
+	{"sm_competitive_max_pause_length", "60"},
+	{"sm_competitive_max_pause_length_technical", "300"},
+	{"sm_competitive_sourcetv_enabled", "1"},
+	{"sm_competitive_comms_behaviour", "0"},
+	{"sm_competitive_log_mode", "1"},
+	{"sm_competitive_killverbosity", "1"},
+	{"sm_competitive_killverbosity_delay", "0"},
+	{"sm_competitive_record_clients", "1"},
+	{"sm_competitive_pause_mode", "2"},
+	{"sm_competitive_readymode_collective", "0"},
+	{"sm_competitive_nozanshi", "0"}, // this is controlled by nt_wincond now, but we set to 0 in comp plugin
 	{"sm_competitive_sudden_death", "1"},
+	{"sm_competitive_display_remaining_players_centered", "1"},
+	{"sm_competitive_display_remaining_players_target", "3"},
 	{"sm_competitive_ghost_overtime", "45"},
 	{"sm_competitive_ghost_overtime_grace", "15"},
 	{"sm_competitive_ghost_overtime_decay_exp", "0"},
+	{"sm_competitive_ghost_overtime_grace_reset", "1"},
 	{"sv_minupdaterate", "66"},
 	{"sv_mincmdrate", "66"},
 	{"sv_minrate", "192000"},
+	{"sv_maxupdaterate", "66"},
+	{"sv_maxcmdrate", "66"},
+	{"sv_maxrate", "576000"},
 	{"sv_cheats", "0"},
 	{"sv_gravity", "800"},
 	{"neo_round_timelimit", "2.26"},
@@ -33,6 +74,7 @@ static char g_cvarList[][][] = {
 	{"sm_nt_squadautojoin", "1"},
 	{"sm_nt_squadlock", "1"},
 	{"sm_nt_fov_max", "90"},
+	{"sv_suppress_viewpunch", "1"},
 	{"sv_accelerate", "10"},
 	{"sv_airaccelerate", "10"},
 	{"sv_footsteps", "1"},
@@ -52,39 +94,50 @@ static char g_cvarList[][][] = {
 	{"sm_nt_wincond_swapattackers", "0"},
 	{"sm_nt_wincond_captime", "0"},
 	{"sm_nt_wincond_consolation_rounds", "0"},
-	{"sm_nt_wincond_survivor_bonus", "1"},
-	{"sm_nt_wincond_ghost_reward", "0"},
-	{"sm_nt_wincond_ghost_reward_dead", "0"},
+	{"sm_nt_wincond_survivor_bonus", "0"},
+	{"sm_nt_wincond_ghost_reward", "3"},
+	{"sm_nt_wincond_ghost_reward_dead", "1"},
 	{"sm_nt_ghost_bias_enabled", "1"},
 	{"sm_nt_ghost_bias_rounds", "2"},
-	{"sm_nt_anti_ghosthop_verbosity", "2"},
-	{"sm_nt_anti_ghosthop_speed_scale", "1.0"},
-	{"sm_nt_anti_ghosthop_n_extra_hops", "0"},
+	{"sm_nt_anti_ghosthop_verbosity", "1"},
+	{"sm_nt_anti_ghosthop_ratio", "1.0"},
 	{"sm_loadout_rescue_allow_loadout_change", "0"},
 	{"sm_nt_assist_enabled", "1"},
-	{"sm_nt_assist_damage", "50"},
+	{"sm_nt_assist_damage", "49"},
 	{"sm_nt_assist_half", "0"},
 	{"sm_nt_assist_notifications", "1"},
 	{"sm_ntdamage_assists", "0"},
+	{"sm_nt_capmover_enable", "1"},
+	{"mp_timelimit", "0"},
+	{"sv_alltalk", "0"},
+	{"tv_enable", "1"},
+	{"tv_maxclients", "0"},
+	{"tv_transmitall", "1"},
+	{"sm_name_force", "1"},
+	{"sm_maxsupports", "1"},
+	{"sm_maxassaults", "1"},
+	{"sm_maxrecons", "1"},
 };
 
-// These plugins should be good for generic 5v5 without class limits in 2024 and the foreseeable future
-// Have been tested extensively and appear to have no major bugs, and few features and fixes missing
+// Plugins we need for ww25
 static char g_compPlugins[][] = {
-	"Comp Server Validator:5v5-20241213",
+	"NT Comp Server Validator:SS24-v1",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
+	"NT Damage Accumulator fix:0.1.0",
 	"NT Stuck Rescue:0.1.0",
-	"NT Win Condition:0.0.10",
-	"NT Anti Ghosthop:3.0.0",
-	"NT Enforce Comp Values:0.2.0",
+	"NT Win Condition:0.0.11",
+	"NT Anti Ghosthop:4.1.2",
+	"NT Enforce Comp Values:0.2.1",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
-	"NT Killer Info:0.2.7",
+	"NT Killer Info:0.3.1",
 	"NT Loadout Rescue:0.4.2",
 	"NT Physics Unstuck:0.6.4",
 	"NT Water Nades:0.1.1",
 	"NT Comp Warmup God Mode:0.1.1",
+	"NT Cap Mover:0.0.3",
+	"NT weapon drop fixes:0.3.0",
 	"Neotokyo Competitive Plugin:3.0.2",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
@@ -100,10 +153,31 @@ static char g_compPlugins[][] = {
 	"NEOTOKYO° Unlimited squad size:1.3",
 	"NEOTOKYO° Input tweaks:0.2.1",
 	"Neotokyo WebSocket:1.6.2",
+	"NT Competitive Vetos:1.3.1",
+	"NT Competitive Clantag Updater:1.0.0",
+	"NT Observer PVS Bypass:0.1.0",
+	"NT Spectator Quick Target:1.0.1",
+	"NEOTOKYO° Vision modes for spectators:0.12",
+	"NT Team join chat commands, and admin force:3.0.0",
+	"NT Chat Prefixed:1.0.0",
+	"Automatic hud_reloadscheme:1.3.1",
+	"NT admin score adjuster:0.1.0",
+	"NT Comp XP Printer:0.1.0",
+	"NT Name Manager:0.5.5",
+	"Neotokyo Class Limits:1.4.1",
 };
 
-//firstly the sourcemod plugins and then some commonly used plugins
+//plugins we require without any particular version (Default SM plugins etc)
 static char g_defaultPlugins[][] = {
+	"Client Preferences",
+	"NT MapChooser",
+	"Nextmap",
+	"Map Nominations",
+	"Rock The Vote",
+};
+
+//plugins we dont really care if they are on the server or not
+static char g_otherPlugins[][] = {
 	"Admin File Reader",
 	"Admin Help",
 	"Admin Menu",
@@ -114,15 +188,10 @@ static char g_defaultPlugins[][] = {
 	"Basic Commands",
 	"Basic Info Triggers",
 	"Basic Votes",
-	"Client Preferences",
 	"Fun Commands",
 	"Fun Votes",
-	"MapChooser",
-	"Nextmap",
-	"Map Nominations",
 	"Player Commands",
 	"Reserved Slots",
-	"Rock The Vote",
 	"Sound Commands",
 	"RandomCycle",
 	"SQL Admin Manager",
@@ -130,15 +199,6 @@ static char g_defaultPlugins[][] = {
 	"SQL Admins (Threaded)",
 	"Simple Adverts",
 	"Advertisements",
-	"NT Observer PVS Bypass",
-	"NT Spectator Quick Target",
-	"NEOTOKYO° Player count events",
-	"NEOTOKYO° Vision modes for spectators",
-	"NT Competitive Vetos",
-	"NT Competitive Clantag Updater",
-	"Automatic hud_reloadscheme",
-	"NT Team join chat commands",
-	"NT Chat Prefixed",
 	"Flip a Coin",
 	"Flip a Coin / mini-game",
 	"Empty server map reloader",
@@ -146,29 +206,48 @@ static char g_defaultPlugins[][] = {
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
-	"No Block",
 };
 
 public void OnPluginStart()
 {
 	RegAdminCmd("sm_validate", Cmd_Validate, ADMFLAG_GENERIC);
 	RegAdminCmd("sm_listplugins", Cmd_ListPlugins, ADMFLAG_GENERIC);
+	AddCommandListener(OnReady, "sm_ready");
+}
+
+public Action OnReady(int client, const char[] command, int argc)
+{
+	if(g_validatedOnce)
+	{
+		if(!g_validationResult)
+		{
+			PrintToChat(client, "[Server Validator] Warning! This server is NOT validated for %s, details should be in console somewhere", g_competition);
+		}
+			
+		return Plugin_Continue;
+	}
+	
+	ValidateServer();
+	PrintToChat(client, "[Server Validator] Check console for validation result (visible to all)");
+	return Plugin_Continue;
 }
 
 public void OnMapStart()
 {
 	g_validateCooldown = false;
+	g_validationResult = false;
+	g_validatedOnce = false;
 }
 
 public Action Cmd_ListPlugins(int client, int args)
 {
 	if (g_validateCooldown)
 	{
-		ReplyToCommand(client, "List Plugins is on cooldown, wait 5s");
+		ReplyToCommand(client, "[Server Validator] List Plugins is on cooldown, wait 5s");
 		return Plugin_Stop;
 	}
 	
-	ValidateServer(client, true);
+	ValidateServer(true);
 	g_validateCooldown = true;
 	CreateTimer(5.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -179,11 +258,11 @@ public Action Cmd_Validate(int client, int args)
 {
 	if (g_validateCooldown)
 	{
-		ReplyToCommand(client, "Validate is on cooldown, wait 5s");
+		ReplyToCommand(client, "[Server Validator] Validate is on cooldown, wait 5s");
 		return Plugin_Stop;
 	}
 	
-	ValidateServer(client);
+	ValidateServer();
 	g_validateCooldown = true;
 	CreateTimer(5.0, ResetValidateCooldown, _, TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -196,7 +275,7 @@ public Action ResetValidateCooldown(Handle timer)
 	return Plugin_Stop;
 }
 
-void ValidateServer(int client, bool listPlugins = false)
+void ValidateServer(bool listPlugins = false)
 {
 	int sm_major;
 	int sm_minor;
@@ -206,41 +285,46 @@ void ValidateServer(int client, bool listPlugins = false)
 	
 	if(sm_major != 1 || sm_minor < 11)
 	{
-		char msg[] = "Sourcemod version less than 1.11 is not supported for comp";
-		ReplyToCommand(client, msg);
+		char msg[] = "[Server Validator] Sourcemod version less than 1.11 is not supported for comp";
+		PrintMsg(msg, PRNT_CHT | PRNT_CNSL);
 		return;
 	}
 	
-	char g_serverPlugins[128][128];
-	char pluginName[128];
-	char pluginVersion[64];
-	char pluginCompare[192];
+	char allServerPlugins[128][128];
 	char msg[128];
 	int dupes;
 	int pluginMatch;
 	int totalPlugins;
 	int unique;
-	bool g_matchedPluginsList[128];
+	bool matchedDefaultList[128];
+	bool matchedCompList[128];
 	bool missingPlugins;
-	Handle PluginIter = GetPluginIterator();
 	
 	if(!listPlugins)
 	{
-		PrintToConsole(client, "<---- Plugins that aren't default or in comp list ---->");
-		PrintToConsole(client, " ");
+		PrintMsg("<---- Plugins that aren't default or in comp list ---->", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	}
 	else
 	{
-		PrintToConsole(client, "<--------------- Plugins on the server --------------->");
-		PrintToConsole(client, " ");
+		PrintMsg("<--------------- Plugins on the server --------------->", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	}
 	
-	//
-	while (MorePlugins(PluginIter))
+	for(int pluginNum = 1; pluginNum <= 128; pluginNum++)
 	{
-		Handle CurrentPlugin = ReadPlugin(PluginIter);
+		Handle CurrentPlugin = FindPluginByNumber(pluginNum);
 		
-		bool defaultPlugin;
+		if(!IsValidHandle(CurrentPlugin) || CurrentPlugin == INVALID_HANDLE)
+		{
+			continue;
+		}
+		
+		char pluginName[128];
+		char pluginVersion[64];
+		char pluginCompare[192];
+	
+		bool otherPlugin;
 		bool unNamed;
 		bool matched;
 		bool dupe;
@@ -251,10 +335,11 @@ void ValidateServer(int client, bool listPlugins = false)
 			unNamed = true;
 		}
 		
-		for(int i = 0; i < sizeof(g_serverPlugins); i++)
+		for(int i = 0; i < sizeof(allServerPlugins); i++)
 		{
-			if(StrEqual(g_serverPlugins[i], pluginName, true))
+			if(StrEqual(allServerPlugins[i], pluginName, true))
 			{
+				++totalPlugins;
 				dupes++;
 				dupe = true;
 			}
@@ -262,20 +347,42 @@ void ValidateServer(int client, bool listPlugins = false)
 		
 		if(dupe)
 		{
-			PrintToConsole(client, "Dupe plugin: %s", pluginName);
+			PrintMsg("Dupe plugin: %s", PRNT_CNSL | PRNT_SRVR, pluginName);
 			continue;
 		}
 		
 		++unique;
 		
-		strcopy(g_serverPlugins[unique - 1], sizeof(pluginName), pluginName);
+		strcopy(allServerPlugins[unique - 1], sizeof(pluginName), pluginName);
 		
 		if(unNamed)
 		{
 			++totalPlugins;
-			PrintToConsole(client, "Unnamed plugin: %s", pluginName);
+			PrintMsg("Unnamed plugin: %s", PRNT_CNSL | PRNT_SRVR, pluginName);
 			continue;
 		}
+		
+		if(!listPlugins)
+		{
+			for(int i = 0; i < sizeof(g_otherPlugins); i++)
+			{
+				if(StrEqual(g_otherPlugins[i], pluginName, true))
+				{
+					otherPlugin = true;
+				}
+			}
+			
+			if(otherPlugin)
+			{
+				continue;
+			}
+		}
+		
+		++totalPlugins;
+		
+		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
+		
+		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
 		
 		if(!listPlugins)
 		{
@@ -283,31 +390,17 @@ void ValidateServer(int client, bool listPlugins = false)
 			{
 				if(StrEqual(g_defaultPlugins[i], pluginName, true))
 				{
-					defaultPlugin = true;
+					matchedDefaultList[i] = true;
+					matched = true;
+					++pluginMatch;
 				}
 			}
 			
-			if(defaultPlugin)
-			{
-				//PrintToServer("default plugin, ignoring: %s", pluginName);
-				continue;
-			}
-		}
-		
-		++totalPlugins;
-		
-		pluginVersion[0] = '\0';
-		GetPluginInfo(CurrentPlugin, PlInfo_Version, pluginVersion, sizeof(pluginVersion));
-		
-		Format(pluginCompare, sizeof(pluginCompare), "%s:%s", pluginName, pluginVersion);
-		
-		if(!listPlugins)
-		{
 			for(int i = 0; i < sizeof(g_compPlugins); i++)
 			{
 				if(StrEqual(g_compPlugins[i], pluginCompare, true))
 				{
-					g_matchedPluginsList[i] = true;
+					matchedCompList[i] = true;
 					matched = true;
 					++pluginMatch;
 				}
@@ -315,107 +408,166 @@ void ValidateServer(int client, bool listPlugins = false)
 		
 			if(!matched)
 			{
-				PrintToConsole(client, "%s", pluginCompare);
+				PrintMsg("%s", PRNT_CNSL | PRNT_SRVR, pluginCompare);
 			}
 		}
 		
 		if(listPlugins)
 		{
-			PrintToConsole(client, "%s", pluginCompare);
+			PrintMsg("%s", PRNT_CNSL | PRNT_SRVR, pluginCompare);
 		}
 	}
-	//
 	
 	if(listPlugins)
 	{
-		PrintToConsole(client, " ");
-		PrintToConsole(client, "Total Plugins: %d", totalPlugins);
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg("Total Plugins: %d", PRNT_CNSL | PRNT_SRVR, totalPlugins);
 		if(dupes > 0)
 		{
-			PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
+			PrintMsg("Total Duplicates: %d !!!", PRNT_CNSL | PRNT_SRVR, dupes);
 		}
-		PrintToConsole(client, " ");
-		PrintToConsole(client, "<----------------------------------------------------->");
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 		
 		listPlugins = false;
-		delete PluginIter;
 		return;
 	}
 		
-	PrintToConsole(client, " ");
-	PrintToConsole(client, "<------------------ Plugins Result ------------------->");
-	PrintToConsole(client, " ");
-	PrintToConsole(client, g_competition);
-	PrintToConsole(client, "Matched %d plugins out of %d required", pluginMatch, sizeof(g_compPlugins));
-	PrintToConsole(client, "Total (non-default) plugins on server: %d", totalPlugins);
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg("<------------------ Plugins Result ------------------->", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg(g_competition, PRNT_CNSL | PRNT_SRVR);
+	PrintMsg("Matched %d plugins out of %d required", PRNT_CNSL | PRNT_SRVR, pluginMatch, sizeof(g_compPlugins) + sizeof(g_defaultPlugins));
+	PrintMsg("Total (non-default) plugins on server: %d", PRNT_CNSL | PRNT_SRVR, totalPlugins);
 	if(dupes > 0)
 	{
-		PrintToConsole(client, "Total Duplicates: %d !!!", dupes);
+		PrintMsg("Total Duplicates: %d !!!", PRNT_CNSL | PRNT_SRVR, dupes);
 	}
-	PrintToConsole(client, " ");
-	PrintToConsole(client, "<------------------------CVARS------------------------>");
-	PrintToConsole(client, " ");
-	bool cvarsMatched = ValidateServerCvars(client);
-	PrintToConsole(client, " ");
-	PrintToConsole(client, "<----------------- Validation Result ----------------->");
-	PrintToConsole(client, " ");
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg("<------------------------CVARS------------------------>", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
 	
-	if(pluginMatch == totalPlugins && cvarsMatched)
+	bool cvarsMatched = ValidateServerCvars();
+	
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	
+	
+	PrintMsg("<------------------------Files------------------------>", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	
+	bool allFilesExist = DoFilesExist();
+	
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg("<----------------- Validation Result ----------------->", PRNT_CNSL | PRNT_SRVR);
+	PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+	
+	if(pluginMatch == (sizeof(g_compPlugins) + sizeof(g_defaultPlugins)))
 	{
-		msg = "Server validated : it has only approved plugins with the correct version and correct settings";
-	}
-	else if(pluginMatch == totalPlugins && !cvarsMatched)
-	{
-		msg = "Server mostly validated : it has only approved plugins with the correct version, settings need admin approval";
-	}
-	else if(pluginMatch == sizeof(g_compPlugins) && totalPlugins >= pluginMatch)
-	{
-		msg = "Validation needs admin approval : It has all required comp plugins, but also additional unknown plugins";
-	}
-	else if(pluginMatch < sizeof(g_compPlugins))
-	{
-		msg = "Server is NOT suitable for comp as required plugins are missing, or not the correct versions";
-		missingPlugins = true;
+		missingPlugins = false;
 	}
 	else
 	{
-		msg = "Something went wrong?";
+		missingPlugins = true;
 	}
 	
-	PrintToConsoleAll(msg);
-	PrintToChatAll(msg);
-	PrintToServer(msg);
+	if(!allFilesExist)
+	{
+		g_validationResult = false;
+		strcopy(msg, sizeof(msg), "[Server Validator] Server is NOT suitable for this comp, files are missing");
+	}
+	else if(dupes > 0)
+	{
+		g_validationResult = false;
+		strcopy(msg, sizeof(msg), "[Server Validator] Server is NOT suitable for this comp, it has duplicate plugins, remove them and try again");
+	}
+	else if(totalPlugins == pluginMatch && !missingPlugins && cvarsMatched)
+	{
+		g_validationResult = true;
+		strcopy(msg, sizeof(msg), "[Server Validator] Server validated : it has only approved plugins with the correct version and correct settings");
+	}
+	else if(totalPlugins == pluginMatch && !missingPlugins && !cvarsMatched)
+	{
+		g_validationResult = false;
+		strcopy(msg, sizeof(msg), "[Server Validator] Need admin approval : it has only approved plugins with the correct version, settings need admin approval");
+	}
+	else if(!missingPlugins && totalPlugins >= pluginMatch)
+	{
+		g_validationResult = false;
+		strcopy(msg, sizeof(msg), "[Server Validator] Need admin approval : It has all required comp plugins, but also additional unknown plugins");
+	}
+	else if(missingPlugins)
+	{
+		g_validationResult = false;
+		strcopy(msg, sizeof(msg), "[Server Validator] Server is NOT suitable for this comp as required plugins are missing, or not the correct versions");
+	}
+	else
+	{
+		g_validationResult = false;
+		strcopy(msg, sizeof(msg), "[Server Validator] Something went wrong?");
+	}
+	
+	PrintMsg(msg, PRNT_ALL);
 	
 	if(!missingPlugins)
 	{
-		PrintToConsole(client, "There are no missing plugins!");
-		PrintToConsole(client, " ");
-		PrintToConsole(client, "<----------------------------------------------------->");
+		PrintMsg("[Server Validator] There are no missing plugins!", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 	}
 	else
 	{
-		PrintToConsole(client, " ");
-		PrintToConsole(client, "<------- Required plugins that are not present ------->");
-		PrintToConsole(client, " ");
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg("<------- Required plugins that are not present ------->", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+		
+		for(int i = 0; i < sizeof(g_defaultPlugins); i++)
+		{
+			if(!matchedDefaultList[i])
+			{
+				PrintMsg("%s", PRNT_CNSL | PRNT_SRVR, g_defaultPlugins[i]);
+			}
+		
+			matchedDefaultList[i] = false;
+		}
 		
 		for(int i = 0; i < sizeof(g_compPlugins); i++)
 		{
-			if(!g_matchedPluginsList[i])
+			if(!matchedCompList[i])
 			{
-				PrintToConsole(client, "%s", g_compPlugins[i]);
+				PrintMsg("%s", PRNT_CNSL | PRNT_SRVR, g_compPlugins[i]);
 			}
 		
-			g_matchedPluginsList[i] = false;
+			matchedCompList[i] = false;
 		}
-		PrintToConsole(client, " ");
-		PrintToConsole(client, "<----------------------------------------------------->");
+		PrintMsg(" ", PRNT_CNSL | PRNT_SRVR);
+		PrintMsg("<----------------------------------------------------->", PRNT_CNSL | PRNT_SRVR);
 	}
 	
-	delete PluginIter;
-	
+	g_validatedOnce = true;
 }
 
-bool ValidateServerCvars(int client) //could there be a bug here with the cvars that are integers and comparing them as float?
+bool DoFilesExist()
+{
+	bool filesMatched = true;
+	
+	for(int iFiles = 0; iFiles < sizeof(g_requiredFiles); iFiles++)
+	{
+		if(!FileExists(g_requiredFiles[iFiles]))
+		{
+			PrintMsg("%s - Not found", PRNT_CNSL | PRNT_SRVR, g_requiredFiles[iFiles]);
+			filesMatched = false;
+		}
+	}
+	
+	if(filesMatched)
+	{
+		PrintMsg("All files are present", PRNT_CNSL | PRNT_SRVR);
+	}
+	
+	return filesMatched;
+}
+
+bool ValidateServerCvars()
 {
 	bool cvarsMatched = true;
 	
@@ -427,20 +579,23 @@ bool ValidateServerCvars(int client) //could there be a bug here with the cvars 
 		if(!IsValidHandle(cvar))
 		{
 			cvarsMatched = false;
-			PrintToConsole(client, "%s - Not found", g_cvarList[i][0]);
+			PrintMsg("%s - Not found", PRNT_CNSL | PRNT_SRVR, g_cvarList[i][0]);
 			continue;
 		}
 		
 		cvar.GetString(buff, sizeof(buff));
 		
-		int flCompare = FloatCompare(StringToFloat(buff), StringToFloat(g_cvarList[i][1]));
-		
-		if(flCompare != 0)
+		if(StringToFloat(buff) != StringToFloat(g_cvarList[i][1]))
 		{
 			cvarsMatched = false;
-			PrintToConsole(client, "%s - Incorrect value", g_cvarList[i][0]);
-			PrintToConsole(client, "  Current value: %s - Required value: %s", buff, g_cvarList[i][1]);
+			PrintMsg("%s - Incorrect value", PRNT_CNSL | PRNT_SRVR, g_cvarList[i][0]);
+			PrintMsg("  Current value: %s - Required value: %s", PRNT_CNSL | PRNT_SRVR, buff, g_cvarList[i][1]);
 		}
+	}
+	
+	if(cvarsMatched)
+	{
+		PrintMsg("All CVARS matched", PRNT_CNSL | PRNT_SRVR);
 	}
 	
 	return cvarsMatched;
@@ -483,4 +638,26 @@ stock bool GetSmVersion(int& out_major, int& out_minor, int& out_patch)
 	out_minor = minor;
 	out_patch = patch;
 	return true;
+}
+
+void PrintMsg(const char[] msg, int flags, any ...)
+{
+	char newMsg[128];
+	
+	VFormat(newMsg, sizeof(newMsg), msg, 3);
+	
+	if (flags & PRNT_SRVR)
+	{
+		PrintToServer(newMsg);
+	}
+
+	if (flags & PRNT_CHT)
+	{
+		PrintToChatAll(newMsg);
+	}
+
+	if (flags & PRNT_CNSL)
+	{
+		PrintToConsoleAll(newMsg);
+	}
 }
