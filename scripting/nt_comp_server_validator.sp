@@ -142,7 +142,7 @@ static char g_compPlugins[][] = {
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
 	"NEOTOKYO° Ghost spawn bias:0.2.3",
-	"NEOTOKYO° Anti Ghost Cap Deny:1.3.1",
+	//"NEOTOKYO° Anti Ghost Cap Deny:1.3.1", needs updating for fixed xp caps
 	"NEOTOKYO° Assist:1.0.1",
 	"NEOTOKYO° Damage counter:0.7.6",
 	"NEOTOKYO° Weapon Drop Tweaks:0.8.4",
