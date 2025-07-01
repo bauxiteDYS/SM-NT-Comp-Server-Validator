@@ -13,9 +13,11 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "SS25-v1",
+	version = "SS25-v2",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
+
+static char g_competition[] = "Tournament: SS25 (v2)";
 
 bool g_validateCooldown;
 bool g_validationResult;
@@ -32,8 +34,6 @@ static char g_requiredFiles[][] = {
 	"/addons/sourcemod/configs/nt-capmover/nt_saitama_redux_ctg_a5.capzones.txt",
 	"/addons/sourcemod/translations/nt_anti_ghosthop.phrases.txt",
 };
-
-static char g_competition[] = "Tournament: SS25 (v1)";
 
 // need more cvars?
 // only works for cvars that are numbers!!!
@@ -97,6 +97,8 @@ static char g_cvarList[][][] = {
 	{"sm_nt_wincond_survivor_bonus", "0"},
 	{"sm_nt_wincond_ghost_reward", "3"},
 	{"sm_nt_wincond_ghost_reward_dead", "1"},
+	{"sm_nt_wincond_ghost_hold_reward", "1"},
+	{"sm_nt_wincond_round_end_logging", "1"},
 	{"sm_nt_ghost_bias_enabled", "1"},
 	{"sm_nt_ghost_bias_rounds", "2"},
 	{"sm_nt_anti_ghosthop_verbosity", "1"},
@@ -121,14 +123,14 @@ static char g_cvarList[][][] = {
 
 // Plugins we need for ww25
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:SS25-v1",
+	"NT Comp Server Validator:SS25-v2",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Damage Accumulator fix:0.1.0",
 	"NT Stuck Rescue:0.1.0",
-	"NT Win Condition:0.0.11",
+	"NT Win Condition:0.0.13.b.ss25",
 	"NT Anti Ghosthop:4.1.2",
-	"NT Enforce Comp Values:0.2.1",
+	"NT Enforce Comp Values:0.2.2.b.ss25",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
 	"NT Killer Info:0.3.1",
@@ -138,11 +140,11 @@ static char g_compPlugins[][] = {
 	"NT Comp Warmup God Mode:0.1.1",
 	"NT Cap Mover:0.0.3",
 	"NT weapon drop fixes:0.3.0",
-	"Neotokyo Competitive Plugin:3.0.2",
+	"Neotokyo Competitive Plugin:3.0.3.b.ss25",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
 	"NEOTOKYO° Ghost spawn bias:0.2.3",
-	//"NEOTOKYO° Anti Ghost Cap Deny:1.3.1", needs updating for fixed xp caps
+	"NEOTOKYO° Anti Ghost Cap Deny:2.1.0.b.ss25",
 	"NEOTOKYO° Assist:1.0.1",
 	"NEOTOKYO° Damage counter:0.7.6",
 	"NEOTOKYO° Weapon Drop Tweaks:0.8.4",
@@ -164,6 +166,7 @@ static char g_compPlugins[][] = {
 	"NT admin score adjuster:0.1.0",
 	"NT Comp XP Printer:0.1.0",
 	"NT Name Manager:0.5.5",
+	"Event IP remover:0.1.1",
 	"Neotokyo Class Limits:1.4.1",
 };
 
@@ -206,6 +209,7 @@ static char g_otherPlugins[][] = {
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
+	"NT admin commands",
 };
 
 public void OnPluginStart()
