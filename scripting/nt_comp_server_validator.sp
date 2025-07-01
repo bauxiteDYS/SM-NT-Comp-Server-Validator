@@ -115,7 +115,7 @@ static char g_cvarList[][][] = {
 	{"tv_enable", "1"},
 	{"tv_maxclients", "0"},
 	{"tv_transmitall", "1"},
-	{"sm_name_force", "1"},
+	{"sm_name_force", "2"},
 	{"sm_maxsupports", "1"},
 	{"sm_maxassaults", "1"},
 	{"sm_maxrecons", "1"},
