@@ -13,9 +13,11 @@ public Plugin myinfo = {
 	name = "NT Comp Server Validator",
 	description = "Validates (basic) or lists the server plugins, use sm_validate or sm_listplugins",
 	author = "bauxite",
-	version = "WW25-v12",
+	version = "SS25-v5",
 	url = "https://github.com/bauxiteDYS/SM-NT-Comp-Server-Validator",
 };
+
+static char g_competition[] = "Tournament: SS25 (v5)";
 
 bool g_validateCooldown;
 bool g_validationResult;
@@ -32,8 +34,6 @@ static char g_requiredFiles[][] = {
 	"/addons/sourcemod/configs/nt-capmover/nt_saitama_redux_ctg_a5.capzones.txt",
 	"/addons/sourcemod/translations/nt_anti_ghosthop.phrases.txt",
 };
-
-static char g_competition[] = "Tournament: WW25 (v12)";
 
 // need more cvars?
 // only works for cvars that are numbers!!!
@@ -74,7 +74,7 @@ static char g_cvarList[][][] = {
 	{"sm_nt_squadautojoin", "1"},
 	{"sm_nt_squadlock", "1"},
 	{"sm_nt_fov_max", "90"},
-	{"sv_suppress_viewpunch", "0"},
+	{"sv_suppress_viewpunch", "1"},
 	{"sv_accelerate", "10"},
 	{"sv_airaccelerate", "10"},
 	{"sv_footsteps", "1"},
@@ -94,9 +94,9 @@ static char g_cvarList[][][] = {
 	{"sm_nt_wincond_swapattackers", "0"},
 	{"sm_nt_wincond_captime", "0"},
 	{"sm_nt_wincond_consolation_rounds", "0"},
-	{"sm_nt_wincond_survivor_bonus", "1"},
-	{"sm_nt_wincond_ghost_reward", "0"},
-	{"sm_nt_wincond_ghost_reward_dead", "0"},
+	{"sm_nt_wincond_survivor_bonus", "0"},
+	{"sm_nt_wincond_ghost_reward", "3"},
+	{"sm_nt_wincond_ghost_reward_dead", "1"},
 	{"sm_nt_wincond_ghost_hold_reward", "1"},
 	{"sm_nt_wincond_round_end_logging", "1"},
 	{"sm_nt_ghost_bias_enabled", "1"},
@@ -105,7 +105,7 @@ static char g_cvarList[][][] = {
 	{"sm_nt_anti_ghosthop_ratio", "1.0"},
 	{"sm_loadout_rescue_allow_loadout_change", "0"},
 	{"sm_nt_assist_enabled", "1"},
-	{"sm_nt_assist_damage", "50"},
+	{"sm_nt_assist_damage", "49"},
 	{"sm_nt_assist_half", "0"},
 	{"sm_nt_assist_notifications", "1"},
 	{"sm_ntdamage_assists", "0"},
@@ -115,19 +115,24 @@ static char g_cvarList[][][] = {
 	{"tv_enable", "1"},
 	{"tv_maxclients", "0"},
 	{"tv_transmitall", "1"},
-	{"sm_name_force", "1"},
+	{"sm_name_force", "2"},
+	{"sm_maxsupports", "1"},
+	{"sm_maxassaults", "1"},
+	{"sm_maxrecons", "1"},
+	{"sm_classlimit_infraction_mode", "2"},
+	{"commentary", "1"},
 };
 
 // Plugins we need for ww25
 static char g_compPlugins[][] = {
-	"NT Comp Server Validator:WW25-v12",
+	"NT Comp Server Validator:SS25-v5",
 	"Websocket:1.2",
 	"NT NoBlock:0.1.1",
 	"NT Damage Accumulator fix:0.1.0",
 	"NT Stuck Rescue:0.1.0",
-	"NT Win Condition:0.0.13",
+	"NT Win Condition:0.0.13.b.ss25",
 	"NT Anti Ghosthop:4.1.2",
-	"NT Enforce Comp Values:0.2.1",
+	"NT Enforce Comp Values:0.3.0",
 	"NT Dead Chat Comp:0.1.1",
 	"NT Competitive Fade Fix:0.5.8",
 	"NT Killer Info:0.3.1",
@@ -137,11 +142,11 @@ static char g_compPlugins[][] = {
 	"NT Comp Warmup God Mode:0.1.1",
 	"NT Cap Mover:0.0.3",
 	"NT weapon drop fixes:0.3.0",
-	"Neotokyo Competitive Plugin:3.0.2",
+	"Neotokyo Competitive Plugin:4.1.0",
 	"Neotokyo FoV Changer:0.2.0",
 	"Neotokyo SRS Quickswitch Limiter:1.2",
 	"NEOTOKYO° Ghost spawn bias:0.2.3",
-	"NEOTOKYO° Anti Ghost Cap Deny:1.3.1",
+	"NEOTOKYO° Anti Ghost Cap Deny:2.1.0.b.ss25",
 	"NEOTOKYO° Assist:1.0.1",
 	"NEOTOKYO° Damage counter:0.7.6",
 	"NEOTOKYO° Weapon Drop Tweaks:0.8.4",
@@ -162,13 +167,15 @@ static char g_compPlugins[][] = {
 	"Automatic hud_reloadscheme:1.3.1",
 	"NT admin score adjuster:0.1.0",
 	"NT Comp XP Printer:0.1.0",
-	"NT Name Manager:0.5.5",
+	"NT Name Manager:0.5.6",
+	"Event IP remover:0.1.1",
+	"Neotokyo Class Limits:1.5.1",
 };
 
 //plugins we require without any particular version (Default SM plugins etc)
 static char g_defaultPlugins[][] = {
 	"Client Preferences",
-	"NT MapChooser",
+	"NT MapChooser Comp",
 	"Nextmap",
 	"Map Nominations",
 	"Rock The Vote",
@@ -197,13 +204,21 @@ static char g_otherPlugins[][] = {
 	"SQL Admins (Threaded)",
 	"Simple Adverts",
 	"Advertisements",
+	"Advertisements, adjusted for NeoTokyo comp play",
 	"Flip a Coin",
 	"Flip a Coin / mini-game",
+	"Empty Map Changer",
 	"Empty server map reloader",
+	"Empty Server map reloader",
 	"Server restart and Map reloader",
 	"NT Force to Spectator",
 	"Force to Spectator",
 	"NEOTOKYO OnRoundConcluded Event",
+	"NT admin commands",
+	"discordWebhookAPI Logger",
+	"MySQL-T Appeals",
+	"[ANY] MySQL-T Bans",
+	"REGEX word filter",
 };
 
 public void OnPluginStart()
